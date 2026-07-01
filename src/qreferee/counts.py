@@ -71,7 +71,7 @@ class CountsDataset:
         setting: str = "default",
         povm: str | None = None,
         meta: dict[str, Any] | None = None,
-    ) -> "CountsDataset":
+    ) -> CountsDataset:
         """Build from a single ``{bitstring: shots}`` histogram."""
         return cls({setting: dict(counts)}, povm=povm, meta=meta or {})
 
@@ -83,7 +83,7 @@ class CountsDataset:
         setting: str = "default",
         povm: str | None = None,
         meta: dict[str, Any] | None = None,
-    ) -> "CountsDataset":
+    ) -> CountsDataset:
         """Build from a Qiskit ``Result`` (duck-typed ``.get_counts()``)."""
         if not hasattr(result, "get_counts"):
             raise TypeError("expected a Qiskit-like object exposing .get_counts()")

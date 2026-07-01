@@ -99,12 +99,12 @@ class Study:
         estimate: str = "",
         assumptions_met: bool = True,
         detail: str = "",
-    ) -> "Study":
+    ) -> Study:
         return self.add_hypothesis(
             Hypothesis(name, pvalue, estimate, assumptions_met, detail)
         )
 
-    def add_hypothesis(self, hypothesis: Hypothesis) -> "Study":
+    def add_hypothesis(self, hypothesis: Hypothesis) -> Study:
         # Validate at every entry point -- a testable hypothesis MUST carry a real
         # p-value, so an invalid one can never slip through to a false CERTIFIED
         # (e.g. via correction='none', which does not re-validate).
@@ -131,7 +131,7 @@ class Study:
         adjusted: dict[int, float] = {}
         if testable_idx:
             adj_vals = _CORRECTIONS[self.correction]([hyps[i].pvalue for i in testable_idx])
-            adjusted = dict(zip(testable_idx, adj_vals))
+            adjusted = dict(zip(testable_idx, adj_vals, strict=True))
 
         results: list[HypothesisResult] = []
         for i, h in enumerate(hyps):
