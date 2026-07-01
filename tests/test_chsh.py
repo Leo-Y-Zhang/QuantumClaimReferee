@@ -25,15 +25,34 @@ def test_azuma_is_looser_than_exact():
 
 def test_regime_b_plenty_of_data_certified():
     r = chsh(6400, 8000, setting_randomness_declared=True)
-    assert r.status == "VIOLATION_CERTIFIED"
+    assert r.status == "CERTIFIED"
     assert r.certified
     assert r.p_memory_robust < 1e-10
+
+
+def test_decisive_non_violation_is_not_certified_not_underpowered():
+    # ample data, clearly below the local bound: NOT_CERTIFIED, not "get more shots"
+    r = chsh(100, 1000, setting_randomness_declared=True)  # omega=0.1, S<2
+    assert r.status == "NOT_CERTIFIED"
 
 
 def test_default_deny_without_randomness_declaration():
     r = chsh(6400, 8000)  # randomness not declared
     assert r.status == "ASSUMPTIONS_UNMET"
     assert not r.certified
+
+
+@pytest.mark.parametrize("kwargs", [{"alpha": 1.5}, {"alpha": 0.0}, {"level": 1.0}])
+def test_out_of_range_alpha_or_level_raise(kwargs):
+    with pytest.raises(ValueError):
+        chsh(6400, 8000, setting_randomness_declared=True, **kwargs)
+
+
+def test_wins_from_setting_counts_rejects_out_of_domain_keys():
+    with pytest.raises(ValueError):
+        wins_from_setting_counts({(0, 2): {(0, 0): 5}})
+    with pytest.raises(ValueError):
+        wins_from_setting_counts({(0, 0): {(0, 3): 5}})
 
 
 def test_wins_from_setting_counts():

@@ -71,9 +71,13 @@ print(qr.referee_report(study.run(), title="device_run_1"))
 | Status | Meaning |
 |---|---|
 | `CERTIFIED` | Survives α *after* multiple-comparison correction |
-| `NOT_CERTIFIED` | Fails the threshold |
-| `UNDERPOWERED` | Too few shots to certify either way (the honest "not yet") |
+| `NOT_CERTIFIED` | Fails the threshold, or a decisive non-violation (evidence *against*) |
+| `UNDERPOWERED` | *(CHSH only)* on the violating side but the evidence does not clear α — get more shots |
 | `ASSUMPTIONS_UNMET` | POVM / setting-randomness undeclared → refused, not guessed |
+
+The `Study` verdict emits `CERTIFIED` / `NOT_CERTIFIED` / `ASSUMPTIONS_UNMET`; the
+CHSH certifier additionally uses `UNDERPOWERED` to distinguish "not enough shots" from
+"evidence against a violation".
 
 ## Scope — and what is deliberately **out** of v1
 
@@ -92,7 +96,7 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 | Capability | Method / source |
 |---|---|
 | Proportion / fidelity CIs | Wilson score; Clopper–Pearson exact |
-| Memory-robust CHSH p-values | game tail `P[Bin(n, 3/4) ≥ wins]`; Gill martingale; Elkouss–Wehner (npj QI 2016) |
+| Memory-robust CHSH p-values | game tail `P[Bin(n, 3/4) ≥ wins]` (Gill martingale / stochastic dominance; Bierhorst). Elkouss–Wehner (npj QI 2016) is a tighter near-optimal refinement, *not implemented* |
 | Conservative CHSH bound | Azuma–Hoeffding |
 | Multiple comparisons | Holm (1979); Benjamini–Hochberg (1995); Bonferroni |
 | Coverage validation | Monte-Carlo empirical-coverage harness (in `qreferee.selftest`) |

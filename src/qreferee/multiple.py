@@ -14,7 +14,9 @@ __all__ = ["bonferroni", "holm", "benjamini_hochberg"]
 
 
 def _as_array(pvals) -> np.ndarray:
-    arr = np.asarray(list(pvals), dtype=float)
+    # asarray (not list()) so a scalar becomes a 0-d array and fails the ndim check
+    # below with a ValueError, rather than a bare TypeError.
+    arr = np.asarray(pvals, dtype=float)
     if arr.ndim != 1 or arr.size == 0:
         raise ValueError("pvals must be a non-empty 1-D sequence")
     if np.any((arr < 0.0) | (arr > 1.0)) or np.any(~np.isfinite(arr)):

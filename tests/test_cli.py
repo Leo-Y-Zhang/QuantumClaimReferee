@@ -6,7 +6,13 @@ from qreferee.cli import main
 def test_chsh_certified_exit_zero(capsys):
     rc = main(["chsh", "--wins", "6400", "--rounds", "8000", "--randomised"])
     assert rc == 0
-    assert "VIOLATION_CERTIFIED" in capsys.readouterr().out
+    assert "CERTIFIED" in capsys.readouterr().out
+
+
+def test_selftest_bad_n_is_usage_error():
+    with pytest.raises(SystemExit) as exc:
+        main(["selftest", "--n", "0"])
+    assert exc.value.code == 2  # argparse usage error, not a traceback
 
 
 def test_chsh_underpowered_exit_one():

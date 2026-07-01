@@ -28,6 +28,10 @@ def _cmd_chsh(args: argparse.Namespace) -> int:
 
 def _cmd_selftest(args: argparse.Namespace) -> int:
     n = args.n
+    if n <= 0:
+        raise ValueError("--n must be a positive integer")
+    if args.trials <= 0:
+        raise ValueError("--trials must be a positive integer")
     print(f"CHSH null false-positive rates at n={n} (nominal alpha=0.05):")
     fpr = chsh_null_false_positive_rates(n, trials=args.trials)
     for name, rate in fpr.items():
@@ -86,7 +90,11 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    return int(args.func(args))
+    try:
+        return int(args.func(args))
+    except ValueError as exc:
+        # Surface bad input as a clean usage error (exit 2), not a traceback.
+        parser.error(str(exc))
 
 
 if __name__ == "__main__":  # pragma: no cover

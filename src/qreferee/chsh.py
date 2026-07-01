@@ -12,8 +12,12 @@ We work in the CHSH *game* picture, which makes a rigorous p-value elementary:
   of the history of previous rounds*;
 * therefore the total number of wins is stochastically dominated by
   ``Binomial(n, 3/4)`` -- so ``P[Binomial(n, 3/4) >= wins]`` is a valid p-value
-  even under the memory loophole (Gill's martingale bound; Bierhorst; the
-  near-optimal p-values of Elkouss & Wehner, npj QI 2016).
+  even under the memory loophole.
+
+The p-value implemented here is exactly that stochastic-dominance / martingale tail
+(Gill, quant-ph/0301059; Bierhorst, J. Phys. A 48 025301). The near-optimal p-values
+of Elkouss & Wehner (npj QI 2016) are a tighter refinement of the same idea and are
+*not* implemented here; the plain game tail is valid and conservative.
 
 The CHSH value maps to the win probability by ``S = 8*omega - 4`` (``S = 2`` is the
 local bound ``omega = 3/4``; Tsirelson's bound ``S = 2*sqrt(2)`` is ``omega ~ 0.8536``).
@@ -31,6 +35,7 @@ from dataclasses import dataclass, field
 from scipy.stats import binom, norm
 
 from .intervals import Interval, wilson_interval
+from .status import ASSUMPTIONS_UNMET, CERTIFIED, NOT_CERTIFIED, UNDERPOWERED
 
 __all__ = ["CHSHResult", "chsh", "wins_from_setting_counts", "CLASSICAL_WIN", "TSIRELSON_S"]
 
@@ -65,7 +70,7 @@ class CHSHResult:
 
     @property
     def certified(self) -> bool:
-        return self.status == "VIOLATION_CERTIFIED"
+        return self.status == CERTIFIED
 
     def summary(self) -> str:
         return (
@@ -94,19 +99,29 @@ def chsh(
     wins, rounds:
         Number of CHSH-game wins and total rounds (``0 <= wins <= rounds``).
     level:
-        Confidence level for the reported interval on ``S``.
+        Confidence level (in ``(0, 1)``) for the reported interval on ``S``.
     alpha:
-        Significance threshold for the certification decision.
+        Significance threshold (in ``(0, 1)``) for the certification decision.
     setting_randomness_declared:
         You must affirm that inputs ``(x, y)`` were chosen randomly each round.
         If ``False`` the game bound is invalid and the status is ``ASSUMPTIONS_UNMET``.
     no_signaling:
         Recorded as an assumption; the standard Bell-test spatial-separation premise.
+
+    Returns
+    -------
+    CHSHResult
+        With the memory-robust p-value, the interval on ``S``, and a default-deny
+        ``status`` in {CERTIFIED, UNDERPOWERED, NOT_CERTIFIED, ASSUMPTIONS_UNMET}.
     """
     if rounds <= 0:
         raise ValueError("rounds must be positive")
     if not (0 <= wins <= rounds):
         raise ValueError(f"wins={wins} must satisfy 0 <= wins <= rounds={rounds}")
+    if not (0.0 < alpha < 1.0):
+        raise ValueError("alpha must be in (0, 1)")
+    if not (0.0 < level < 1.0):
+        raise ValueError("level must be in (0, 1)")
 
     omega = wins / rounds
     S = _omega_to_s(omega)
@@ -145,11 +160,15 @@ def chsh(
         assumptions.append("no_signaling")
 
     if not setting_randomness_declared:
-        status = "ASSUMPTIONS_UNMET"
+        status = ASSUMPTIONS_UNMET
     elif p_memory_robust <= alpha:
-        status = "VIOLATION_CERTIFIED"
+        status = CERTIFIED
+    elif omega <= CLASSICAL_WIN:
+        # point estimate at or below the local bound: decisive non-violation
+        status = NOT_CERTIFIED
     else:
-        status = "UNDERPOWERED"
+        # on the violating side but the evidence does not clear alpha: get more shots
+        status = UNDERPOWERED
 
     return CHSHResult(
         wins=wins,
@@ -166,17 +185,30 @@ def chsh(
     )
 
 
-def wins_from_setting_counts(counts: dict[tuple[int, int], dict[tuple[int, int], int]]) -> tuple[int, int]:
+def wins_from_setting_counts(
+    counts: dict[tuple[int, int], dict[tuple[int, int], int]]
+) -> tuple[int, int]:
     """Reduce per-setting outcome counts to ``(wins, rounds)`` for the CHSH game.
 
     ``counts`` maps each input pair ``(x, y)`` in ``{0,1}^2`` to a dict of measured
     outcome pairs ``(a, b)`` in ``{0,1}^2`` and their shot counts. A round is a win
     iff ``a XOR b == x AND y``.
+
+    .. warning::
+       The returned ``(wins, rounds)`` is only a valid *memory-robust* input when the
+       inputs ``(x, y)`` were sampled from a trusted RNG independently each round.
+       Pooling fixed or deterministic per-setting blocks discards round order and
+       breaks the martingale premise (Gill, 2003; Bierhorst, 2015) -- do **not** then
+       affirm ``setting_randomness_declared=True`` for such block designs.
     """
     wins = 0
     rounds = 0
     for (x, y), outcomes in counts.items():
+        if x not in (0, 1) or y not in (0, 1):
+            raise ValueError("settings (x, y) must be in {0, 1}")
         for (a, b), c in outcomes.items():
+            if a not in (0, 1) or b not in (0, 1):
+                raise ValueError("outcomes (a, b) must be in {0, 1}")
             if c < 0:
                 raise ValueError("counts must be non-negative")
             rounds += c

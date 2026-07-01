@@ -41,6 +41,13 @@ def referee_report(
     caveats: tuple[str, ...] = _DEFAULT_CAVEATS,
     meta: dict | None = None,
 ) -> str:
+    """Render a :class:`~qreferee.verdict.Verdict` as a deterministic referee report.
+
+    The output is a headline verdict over the per-hypothesis numbers, a reproducibility
+    block (tool + dependency versions and a content hash of the inputs) and a caveats
+    section. It contains no timestamps or randomness, so identical inputs render
+    byte-identical text. Pass ``meta`` for extra header lines (rendered sorted).
+    """
     bar = "=" * 68
     lines = [bar, f" {title}", bar, ""]
     lines.append(f" VERDICT: {verdict.classification}")

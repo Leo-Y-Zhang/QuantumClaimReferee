@@ -74,7 +74,13 @@ def chsh_null_false_positive_rates(
 
     se_obs = np.sqrt(omega * (1.0 - omega) / n)
     with np.errstate(divide="ignore", invalid="ignore"):
-        z_obs = np.where(se_obs > 0, (omega - CLASSICAL_WIN) / se_obs, np.inf)
+        # sign-aware degenerate branch: an all-loss sample (omega=0) must map to p=1,
+        # not p=0. (Only reachable at absurdly small n, but correct is correct.)
+        z_obs = np.where(
+            se_obs > 0,
+            (omega - CLASSICAL_WIN) / se_obs,
+            np.where(omega > CLASSICAL_WIN, np.inf, -np.inf),
+        )
     p_naive_observed = norm.sf(z_obs)
 
     se_null = np.sqrt(CLASSICAL_WIN * (1.0 - CLASSICAL_WIN) / n)

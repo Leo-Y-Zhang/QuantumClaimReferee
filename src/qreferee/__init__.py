@@ -20,13 +20,14 @@ from .fidelity import fidelity_to_basis_state, probability_interval
 from .intervals import Interval, clopper_pearson_interval, wilson_interval
 from .multiple import benjamini_hochberg, bonferroni, holm
 from .report import referee_report
-from .verdict import Hypothesis, Study, Verdict
+from .verdict import Hypothesis, HypothesisResult, Study, Verdict
 
 __all__ = [
     "__version__",
     "CHSHResult",
     "CountsDataset",
     "Hypothesis",
+    "HypothesisResult",
     "Interval",
     "Study",
     "Verdict",

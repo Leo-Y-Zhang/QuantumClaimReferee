@@ -44,15 +44,17 @@ class Interval:
     def __str__(self) -> str:
         return (
             f"{self.point:.4f}  [{self.lo:.4f}, {self.hi:.4f}]  "
-            f"({int(self.level * 100)}% {self.method}, n={self.n})"
+            f"({self.level * 100:g}% {self.method}, n={self.n})"
         )
 
 
-def _validate(k: int, n: int) -> None:
+def _validate(k: int, n: int, level: float) -> None:
     if n <= 0:
         raise ValueError("n must be a positive integer")
     if not (0 <= k <= n):
         raise ValueError(f"k={k} must satisfy 0 <= k <= n={n}")
+    if not (0.0 < level < 1.0):
+        raise ValueError("level must be in (0, 1)")
 
 
 def wilson_interval(k: int, n: int, level: float = 0.95) -> Interval:
@@ -61,7 +63,7 @@ def wilson_interval(k: int, n: int, level: float = 0.95) -> Interval:
     Well behaved for small ``n`` and for proportions near 0 or 1, where the naive
     Wald interval fails. This is the recommended default.
     """
-    _validate(k, n)
+    _validate(k, n, level)
     z = float(norm.ppf(1.0 - (1.0 - level) / 2.0))
     phat = k / n
     denom = 1.0 + z * z / n
@@ -78,7 +80,7 @@ def clopper_pearson_interval(k: int, n: int, level: float = 0.95) -> Interval:
     Conservative by construction -- the honest, default-deny choice when you would
     rather under-claim than over-claim significance.
     """
-    _validate(k, n)
+    _validate(k, n, level)
     alpha = 1.0 - level
     lo = 0.0 if k == 0 else float(beta.ppf(alpha / 2.0, k, n - k + 1))
     hi = 1.0 if k == n else float(beta.ppf(1.0 - alpha / 2.0, k + 1, n - k))

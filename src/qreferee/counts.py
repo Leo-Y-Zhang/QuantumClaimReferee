@@ -12,6 +12,7 @@ matter how correct the statistics on top of it.
 
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -31,13 +32,17 @@ class CountsDataset:
             if not hist:
                 raise ValueError(f"setting {label!r} has no counts")
             width = len(next(iter(hist)))
+            total = 0
             for bitstring, c in hist.items():
                 if c < 0:
                     raise ValueError(f"negative count in setting {label!r}")
+                total += c
                 if len(bitstring) != width or any(ch not in "01" for ch in bitstring):
                     raise ValueError(
                         f"setting {label!r}: bitstrings must be equal-length 0/1 strings"
                     )
+            if total == 0:
+                raise ValueError(f"setting {label!r} has zero total shots")
 
     def require_povm(self) -> str:
         """Return the declared POVM or raise -- the default-deny gate."""
@@ -84,6 +89,14 @@ class CountsDataset:
             raise TypeError("expected a Qiskit-like object exposing .get_counts()")
         raw = result.get_counts()
         if isinstance(raw, list):
+            if not raw:
+                raise ValueError("Qiskit result contains no counts")
+            if len(raw) > 1:
+                warnings.warn(
+                    "Qiskit result holds multiple experiments; using only the first. "
+                    "Build a CountsDataset per experiment to keep them all.",
+                    stacklevel=2,
+                )
             raw = raw[0]
         # normalise bitstrings (strip spaces used by multi-register results)
         hist = {str(k).replace(" ", ""): int(v) for k, v in raw.items()}
