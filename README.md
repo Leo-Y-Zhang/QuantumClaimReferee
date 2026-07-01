@@ -1,4 +1,6 @@
-# qreferee
+# QReferee
+
+[![CI](https://github.com/GreenPandaTech/QReferee/actions/workflows/ci.yml/badge.svg)](https://github.com/GreenPandaTech/QReferee/actions/workflows/ci.yml)
 
 **An honest, finite-sample statistical referee for quantum measurement claims.**
 

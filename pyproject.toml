@@ -13,7 +13,7 @@ keywords = ["quantum", "statistics", "entanglement", "CHSH", "validation", "repr
 dependencies = ["numpy>=1.24", "scipy>=1.10"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "ruff>=0.6"]
 
 [project.scripts]
 qref = "qreferee.cli:main"
@@ -24,3 +24,10 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C4"]

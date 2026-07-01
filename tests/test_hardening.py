@@ -4,8 +4,6 @@ These exist because the package's whole pitch is "never a silent pass": an inval
 input must raise, never yield a false CERTIFIED, and never silently drop data.
 """
 
-import warnings
-
 import pytest
 from scipy.stats import binom
 
