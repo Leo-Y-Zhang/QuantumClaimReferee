@@ -1,6 +1,6 @@
 import pytest
 
-from qreferee.counts import CountsDataset
+from minos.counts import CountsDataset
 
 
 def test_from_counts_and_probability():

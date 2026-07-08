@@ -1,10 +1,10 @@
-# QReferee
+# Minos - an honest, finite-sample statistical referee for quantum measurement claims
 
-[![CI](https://github.com/GreenPandaTech/QReferee/actions/workflows/ci.yml/badge.svg)](https://github.com/GreenPandaTech/QReferee/actions/workflows/ci.yml)
+[![CI](https://github.com/GreenPandaTech/Minos/actions/workflows/ci.yml/badge.svg)](https://github.com/GreenPandaTech/Minos/actions/workflows/ci.yml)
 
 **An honest, finite-sample statistical referee for quantum measurement claims.**
 
-Point `qreferee` at raw measurement counts and get a *default-deny* verdict on whether
+Point `minos` at raw measurement counts and get a *default-deny* verdict on whether
 a fidelity or entanglement/CHSH claim actually survives finite-sample scrutiny — with a
 reproducible referee's report you can attach to a paper or an internal review.
 
@@ -20,7 +20,7 @@ this provides — is:
 
 1. **Valid finite-sample CHSH / Bell p-values** that replace the field's common
    "S exceeds 2 by *k* sigma" habit. That habit is not merely loose — it is
-   *miscalibrated*: it certifies violations that are not there. qreferee uses the
+   *miscalibrated*: it certifies violations that are not there. minos uses the
    game-based bound that is valid even under the **memory loophole**
    (Gill / Bierhorst / Elkouss–Wehner).
 2. A **meta-statistical referee discipline** — multiple-comparison correction,
@@ -31,9 +31,9 @@ this provides — is:
 ## The wedge, in one run
 
 ```bash
-qref selftest --n 80          # naive CHSH false-positive rate ~0.074 vs nominal 0.05
-qref selftest --n 8000        # at high statistics the gap vanishes
-qref demo                     # the scarce-vs-plentiful worked example + a best-of-6 scan
+minos selftest --n 80          # naive CHSH false-positive rate ~0.074 vs nominal 0.05
+minos selftest --n 8000        # at high statistics the gap vanishes
+minos demo                     # the scarce-vs-plentiful worked example + a best-of-6 scan
 ```
 
 At `n = 80` the naive observed-SE test **certifies** data the rigorous game tail calls
@@ -51,7 +51,7 @@ Dependencies are limited to `numpy` and `scipy`. No network access is ever perfo
 ## Library usage
 
 ```python
-import qreferee as qr
+import minos as qr
 
 # CHSH from game wins/rounds (settings must be declared randomised, or it default-denies)
 r = qr.chsh(6400, 8000, setting_randomness_declared=True)
@@ -101,7 +101,7 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 | Memory-robust CHSH p-values | game tail `P[Bin(n, 3/4) ≥ wins]` (Gill martingale / stochastic dominance; Bierhorst). Elkouss–Wehner (npj QI 2016) is a tighter near-optimal refinement, *not implemented* |
 | Conservative CHSH bound | Azuma–Hoeffding |
 | Multiple comparisons | Holm (1979); Benjamini–Hochberg (1995); Bonferroni |
-| Coverage validation | Monte-Carlo empirical-coverage harness (in `qreferee.selftest`) |
+| Coverage validation | Monte-Carlo empirical-coverage harness (in `minos.selftest`) |
 
 ## Tests
 

@@ -1,6 +1,6 @@
 import pytest
 
-from qreferee.chsh import chsh, wins_from_setting_counts
+from minos.chsh import chsh, wins_from_setting_counts
 
 
 def test_value_map_local_bound():

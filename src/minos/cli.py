@@ -1,6 +1,6 @@
-"""``qref`` command-line interface.
+"""``minos`` command-line interface.
 
-Exit code 0 means CERTIFIED, non-zero means anything else -- so qref drops into a
+Exit code 0 means CERTIFIED, non-zero means anything else -- so minos drops into a
 CI gate or a research pipeline exactly like a test runner.
 """
 
@@ -62,8 +62,8 @@ def _cmd_demo(_args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="qref", description=__doc__)
-    parser.add_argument("--version", action="version", version=f"qreferee {__version__}")
+    parser = argparse.ArgumentParser(prog="minos", description=__doc__)
+    parser.add_argument("--version", action="version", version=f"minos {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_chsh = sub.add_parser("chsh", help="certify a CHSH violation from wins/rounds")

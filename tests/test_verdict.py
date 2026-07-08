@@ -1,6 +1,6 @@
 import pytest
 
-from qreferee.verdict import Study
+from minos.verdict import Study
 
 
 def test_all_pass_is_certified():

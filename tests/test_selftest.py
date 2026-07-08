@@ -1,4 +1,4 @@
-from qreferee.selftest import binomial_interval_coverage, chsh_null_false_positive_rates
+from minos.selftest import binomial_interval_coverage, chsh_null_false_positive_rates
 
 
 def test_naive_chsh_is_miscalibrated_at_small_n():

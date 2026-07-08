@@ -1,6 +1,6 @@
 """Finite-sample confidence intervals for binomial proportions.
 
-Everything qreferee v1 measures is a *linear functional* of the quantum state --
+Everything minos v1 measures is a *linear functional* of the quantum state --
 a per-outcome probability, or a fidelity to a fixed target expressed as an average
 of bounded measurement outcomes. Such quantities are estimated as a sample
 proportion, so honest error bars reduce to a binomial confidence interval.

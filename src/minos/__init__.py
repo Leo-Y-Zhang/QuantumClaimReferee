@@ -1,4 +1,4 @@
-"""qreferee -- an honest, finite-sample statistical referee for quantum claims.
+"""minos -- an honest, finite-sample statistical referee for quantum claims.
 
 Point it at raw measurement counts and get a default-deny verdict on whether a
 fidelity or entanglement/CHSH claim survives finite-sample scrutiny. This is a

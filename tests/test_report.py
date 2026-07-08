@@ -1,6 +1,6 @@
-from qreferee import __version__
-from qreferee.report import referee_report
-from qreferee.verdict import Study
+from minos import __version__
+from minos.report import referee_report
+from minos.verdict import Study
 
 
 def _verdict():

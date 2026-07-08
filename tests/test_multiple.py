@@ -1,6 +1,6 @@
 import pytest
 
-from qreferee.multiple import benjamini_hochberg, bonferroni, holm
+from minos.multiple import benjamini_hochberg, bonferroni, holm
 
 
 def test_holm_known_sequence():

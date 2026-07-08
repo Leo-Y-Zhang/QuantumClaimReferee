@@ -19,9 +19,9 @@ First release. A finite-sample statistical referee for quantum measurement claim
   naive-Gaussian contrast reported for comparison only.
 - Multiple-comparison corrections: Holm, Benjamini-Hochberg, Bonferroni.
 - Default-deny `Study` / `Verdict` and a deterministic `referee_report`.
-- Monte-Carlo coverage self-test (`qreferee.selftest`) demonstrating that the
+- Monte-Carlo coverage self-test (`minos.selftest`) demonstrating that the
   naive CHSH test is miscalibrated at low shot counts while the game tail is not.
-- `qref` command-line interface with CI-gate exit codes.
+- `minos` command-line interface with CI-gate exit codes.
 
 ### Scope
 - v1 is restricted to linear functionals and CHSH. Full-state confidence regions,

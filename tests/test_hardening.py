@@ -7,11 +7,11 @@ input must raise, never yield a false CERTIFIED, and never silently drop data.
 import pytest
 from scipy.stats import binom
 
-from qreferee.chsh import CLASSICAL_WIN, chsh
-from qreferee.counts import CountsDataset
-from qreferee.intervals import clopper_pearson_interval, wilson_interval
-from qreferee.multiple import holm
-from qreferee.verdict import Hypothesis, Study
+from minos.chsh import CLASSICAL_WIN, chsh
+from minos.counts import CountsDataset
+from minos.intervals import clopper_pearson_interval, wilson_interval
+from minos.multiple import holm
+from minos.verdict import Hypothesis, Study
 
 
 def test_negative_pvalue_cannot_produce_false_certified():

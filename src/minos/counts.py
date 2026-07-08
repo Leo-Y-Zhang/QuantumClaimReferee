@@ -2,7 +2,7 @@
 
 A ``CountsDataset`` is one schema every SDK's results reduce to: a set of named
 measurement settings, each a ``{bitstring: shots}`` histogram. Qiskit, Cirq and
-PennyLane all expose counts as such dicts, so adapters are thin and qreferee keeps
+PennyLane all expose counts as such dicts, so adapters are thin and minos keeps
 its dependency footprint to numpy/scipy.
 
 Default-deny is baked in: the assumed measurement (POVM) must be declared, because a

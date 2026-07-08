@@ -1,8 +1,8 @@
 """CHSH / Bell-inequality certification with *valid* finite-sample p-values.
 
-The flagship of qreferee. The routine practice of "S exceeds 2 by many sigma"
+The flagship of minos. The routine practice of "S exceeds 2 by many sigma"
 (a Gaussian on the CHSH value using the observed variance) is not merely loose --
-it is miscalibrated: it certifies data it should not (see :mod:`qreferee.selftest`).
+it is miscalibrated: it certifies data it should not (see :mod:`minos.selftest`).
 
 We work in the CHSH *game* picture, which makes a rigorous p-value elementary:
 

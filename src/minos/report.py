@@ -37,11 +37,11 @@ def _content_hash(verdict: Verdict) -> str:
 def referee_report(
     verdict: Verdict,
     *,
-    title: str = "qreferee report",
+    title: str = "minos report",
     caveats: tuple[str, ...] = _DEFAULT_CAVEATS,
     meta: dict | None = None,
 ) -> str:
-    """Render a :class:`~qreferee.verdict.Verdict` as a deterministic referee report.
+    """Render a :class:`~minos.verdict.Verdict` as a deterministic referee report.
 
     The output is a headline verdict over the per-hypothesis numbers, a reproducibility
     block (tool + dependency versions and a content hash of the inputs) and a caveats
@@ -69,7 +69,7 @@ def referee_report(
     lines.append("")
     lines.append(" REPRODUCIBILITY")
     lines.append(
-        f"   qreferee {__version__} | numpy {np.__version__} | scipy {scipy.__version__}"
+        f"   minos {__version__} | numpy {np.__version__} | scipy {scipy.__version__}"
     )
     lines.append(f"   inputs sha256:{_content_hash(verdict)}")
     lines.append("")

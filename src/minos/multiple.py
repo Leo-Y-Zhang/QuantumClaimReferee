@@ -3,7 +3,7 @@
 When you scan many witnesses, inequalities, or qubit pairs and report the most
 significant one, the reported p-value must be corrected for the search, exactly as a
 best-of-N backtest Sharpe must be deflated. Quantum experiment papers rarely do this;
-it is one of qreferee's genuinely-absent contributions. All methods are standard.
+it is one of minos's genuinely-absent contributions. All methods are standard.
 """
 
 from __future__ import annotations

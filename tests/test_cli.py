@@ -1,6 +1,6 @@
 import pytest
 
-from qreferee.cli import main
+from minos.cli import main
 
 
 def test_chsh_certified_exit_zero(capsys):

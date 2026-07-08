@@ -3,7 +3,7 @@
 A referee tool must referee itself. These Monte-Carlo checks are the point of the
 whole package: they demonstrate empirically that the recommended estimators are
 calibrated (coverage >= nominal; false-positive rate <= alpha), and that the naive
-practice qreferee replaces is *miscalibrated* -- it certifies violations that are not
+practice minos replaces is *miscalibrated* -- it certifies violations that are not
 there. Formulas are cheap; validated coverage is what earns trust.
 """
 
