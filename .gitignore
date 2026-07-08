@@ -7,3 +7,9 @@ dist/
 .pytest_cache/
 .venv/
 venv/
+
+# Secrets / credentials (defensive - none should ever exist here)
+.env
+.env.*
+*.pem
+*.key
