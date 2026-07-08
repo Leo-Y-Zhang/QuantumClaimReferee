@@ -2,11 +2,13 @@
 
 [![CI](https://github.com/GreenPandaTech/Minos/actions/workflows/ci.yml/badge.svg)](https://github.com/GreenPandaTech/Minos/actions/workflows/ci.yml)
 
-**An honest, finite-sample statistical referee for quantum measurement claims.**
-
 Point `minos` at raw measurement counts and get a *default-deny* verdict on whether
 a fidelity or entanglement/CHSH claim actually survives finite-sample scrutiny — with a
-reproducible referee's report you can attach to a paper or an internal review.
+reproducible referee's report you can attach to a paper or an internal review. The
+non-obvious part: the field's usual "*S* beats 2 by *k* sigma" test is *miscalibrated*
+at realistic shot counts (it certifies violations that are not there), so `minos` uses a
+finite-sample game bound that stays valid even under the memory loophole — and ships a
+coverage self-test that proves the gap.
 
 > **A measurement referee, not a device.** It does not run circuits, mitigate error, or
 > improve results. It tells you how much to trust a claim. Nothing here is a physics
@@ -55,11 +57,11 @@ import minos as qr
 
 # CHSH from game wins/rounds (settings must be declared randomised, or it default-denies)
 r = qr.chsh(6400, 8000, setting_randomness_declared=True)
-print(r.summary())          # -> VIOLATION_CERTIFIED, with the memory-robust p-value
+print(r.summary())          # -> status CERTIFIED, with the memory-robust p-value
 
 # Fidelity to a computational-basis target = a linear functional with an honest CI
 ds = qr.CountsDataset.from_counts({"000": 940, "111": 40, "001": 20}, povm="ideal_projective")
-print(qr.fidelity_to_basis_state(ds, "000"))     # 0.9400  [0.921, 0.955] (95% wilson)
+print(qr.fidelity_to_basis_state(ds, "000"))     # 0.9400  [0.9235, 0.9531]  (95% wilson, n=1000)
 
 # Bundle hypotheses, correct for the search, get a default-deny verdict + report
 study = qr.Study(alpha=0.05, correction="holm")
@@ -106,8 +108,12 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 ## Tests
 
 ```bash
-python -m pytest
+python -m pytest        # 67 tests
 ```
+
+The suite covers CHSH certification and its guardrails, both interval methods, the
+multiple-comparison corrections, the default-deny verdict logic, CLI exit codes, and
+the Monte-Carlo coverage self-test itself. CI runs on Python 3.11-3.13.
 
 ## License
 
