@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "An honest, finite-sample statistical referee for quantum measurement claims."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { text = "Proprietary - All Rights Reserved" }
 keywords = ["quantum", "statistics", "entanglement", "CHSH", "validation", "reproducibility"]
 dependencies = ["numpy>=1.24", "scipy>=1.10"]
 

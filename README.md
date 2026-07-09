@@ -117,4 +117,4 @@ the Monte-Carlo coverage self-test itself. CI runs on Python 3.11-3.13.
 
 ## License
 
-MIT. The underlying published mathematics is not claimed; this implementation is.
+Proprietary - All Rights Reserved (c) 2026 GreenPandaTech - portfolio viewing only.
