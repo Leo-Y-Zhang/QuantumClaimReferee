@@ -37,14 +37,39 @@ from scipy.stats import binom, norm
 from .intervals import Interval, wilson_interval
 from .status import ASSUMPTIONS_UNMET, CERTIFIED, NOT_CERTIFIED, UNDERPOWERED
 
-__all__ = ["CHSHResult", "chsh", "wins_from_setting_counts", "CLASSICAL_WIN", "TSIRELSON_S"]
+__all__ = [
+    "CHSHResult",
+    "chsh",
+    "game_tail_pvalue",
+    "omega_to_s",
+    "s_to_omega",
+    "wins_from_setting_counts",
+    "CLASSICAL_WIN",
+    "TSIRELSON_S",
+]
 
 CLASSICAL_WIN = 0.75
 TSIRELSON_S = 2.0 * math.sqrt(2.0)
 
 
-def _omega_to_s(omega: float) -> float:
+def omega_to_s(omega: float) -> float:
+    """Map a CHSH-game win probability ``omega`` to the CHSH value ``S = 8*omega - 4``."""
     return 8.0 * omega - 4.0
+
+
+def s_to_omega(s: float) -> float:
+    """Inverse of :func:`omega_to_s`: the win probability ``omega = (S + 4) / 8``."""
+    return (s + 4.0) / 8.0
+
+
+def game_tail_pvalue(wins: int, rounds: int) -> float:
+    """The memory-robust p-value ``P[Binomial(rounds, 3/4) >= wins]``.
+
+    This is *the* certification criterion: :func:`chsh` certifies exactly when this
+    tail is ``<= alpha``. It is exposed so other modules (e.g. :mod:`minos.power`)
+    reuse the identical threshold rather than reimplementing a parallel one.
+    """
+    return float(binom.sf(wins - 1, rounds, CLASSICAL_WIN))
 
 
 @dataclass(frozen=True)
@@ -124,13 +149,13 @@ def chsh(
         raise ValueError("level must be in (0, 1)")
 
     omega = wins / rounds
-    S = _omega_to_s(omega)
+    S = omega_to_s(omega)
 
     om_ci = wilson_interval(wins, rounds, level)
     S_ci = Interval(
-        _omega_to_s(om_ci.point),
-        _omega_to_s(om_ci.lo),
-        _omega_to_s(om_ci.hi),
+        omega_to_s(om_ci.point),
+        omega_to_s(om_ci.lo),
+        omega_to_s(om_ci.hi),
         level,
         "wilson->S",
         rounds,
@@ -138,7 +163,7 @@ def chsh(
     )
 
     # Rigorous, memory-robust p-value: P[Binomial(n, 3/4) >= wins].
-    p_memory_robust = float(binom.sf(wins - 1, rounds, CLASSICAL_WIN))
+    p_memory_robust = game_tail_pvalue(wins, rounds)
 
     # Closed-form Azuma/Hoeffding bound: valid but loose.
     delta = omega - CLASSICAL_WIN

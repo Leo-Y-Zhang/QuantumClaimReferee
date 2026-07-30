@@ -1,11 +1,42 @@
+import math
+
 import pytest
 
-from minos.chsh import chsh, wins_from_setting_counts
+from minos.chsh import (
+    TSIRELSON_S,
+    chsh,
+    game_tail_pvalue,
+    omega_to_s,
+    s_to_omega,
+    wins_from_setting_counts,
+)
 
 
 def test_value_map_local_bound():
     r = chsh(75, 100, setting_randomness_declared=True)  # omega = 0.75
     assert r.S == pytest.approx(2.0)
+
+
+def test_omega_s_mapping_round_trips():
+    assert omega_to_s(0.75) == pytest.approx(2.0)
+    assert s_to_omega(2.0) == pytest.approx(0.75)
+    assert s_to_omega(TSIRELSON_S) == pytest.approx((2.0 + math.sqrt(2.0)) / 4.0)
+    for s in (2.0, 2.4, 2.7, TSIRELSON_S):
+        assert omega_to_s(s_to_omega(s)) == pytest.approx(s)
+
+
+def test_game_tail_pvalue_is_the_shipped_pvalue():
+    # The exported tail must be byte-identical to what chsh() reports and decides on.
+    for wins, rounds in [(66, 80), (6400, 8000), (0, 5), (5, 5)]:
+        r = chsh(wins, rounds, setting_randomness_declared=True)
+        assert game_tail_pvalue(wins, rounds) == r.p_memory_robust
+
+
+def test_game_tail_pvalue_hand_computed():
+    # P[Bin(2, 3/4) >= 1] = 1 - (1/4)^2 = 15/16; P[Bin(3, 3/4) >= 3] = (3/4)^3.
+    assert game_tail_pvalue(1, 2) == pytest.approx(15.0 / 16.0)
+    assert game_tail_pvalue(3, 3) == pytest.approx(0.75**3)
+    assert game_tail_pvalue(0, 4) == pytest.approx(1.0)
 
 
 def test_regime_a_scarce_data_underpowered():
