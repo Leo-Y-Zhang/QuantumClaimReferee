@@ -4,6 +4,48 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-07-31
+
+### Added
+- Adversarial memory-loophole self-test (`minos.adversary`, `minos selftest
+  --adversarial`): the referee now *demonstrates*, not just cites, that its
+  game-tail certification bounds history-dependent local players. The model is
+  the fully general deterministic-per-round memory-LHV adversary: each round it
+  commits one of the 16 deterministic local strategy pairs as any function of
+  all past settings, past outcomes, and private randomness; the referee then
+  draws settings from a private RNG stream the adversary never sees. Both
+  constraints are structural: strategy indices are range-checked every round,
+  and a regression test proves an adversary that clones its own generator to
+  peek ahead stays at the classical bound.
+- The shipped battery: a memoryless bound-saturator reference, a
+  greedy-denominator adversary (one-step-optimal attack on the naive
+  per-setting correlator estimator, derivation in its docstring), a
+  win-stay/lose-shift outcome-memory adversary, and a quit-while-ahead
+  score-memory adversary. `chsh_adversarial_false_positive_rates` referees the
+  battery with the shipped verdict machinery (`critical_wins`, spot-checked
+  against `chsh()` itself -- drift raises) and returns per-adversary
+  scorecards against the exact ceiling `P[Bin(n, 3/4) >= c_alpha(n)]`.
+- `naive_persetting_pvalues`: the field-habit per-setting sigma test, included
+  FOR CONTRAST ONLY as the thing the adversaries attack. Measured (seed 0,
+  4000 trials per point): the greedy-denominator adversary inflates its
+  false-positive rate to 0.2953 at n=80 against a nominal 0.05, and the
+  inflation does not vanish with more data (0.2873 at n=320, 0.2555 at
+  n=1000, 0.2675 at n=4000), while every adversary's memory-robust
+  certification rate stays within Monte-Carlo noise of the exact binomial
+  ceiling. Sacrifice-class adversaries are checked to MATCH Binomial(n, 3/4)
+  in pooled wins, not merely stay below it: memory moves per-setting
+  statistics, never the pooled win count, which is why minos certifies from
+  pooled wins.
+- Optional stopping (choosing `n` adaptively) is a different loophole and is
+  documented as out of scope for the simulator.
+
+### Fixed
+- Impossible per-setting tallies (wins above counts, negative wins, non-finite
+  entries) passed to `naive_persetting_pvalues` now raise instead of silently
+  yielding a confident p-value from unphysical data.
+- `chsh_adversarial_false_positive_rates` rejects duplicate adversary names up
+  front instead of silently overwriting one scorecard.
+
 ## [0.2.0] - 2026-07-30
 
 ### Added

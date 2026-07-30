@@ -35,6 +35,7 @@ this provides — is:
 ```bash
 minos selftest --n 80          # naive CHSH false-positive rate ~0.074 vs nominal 0.05
 minos selftest --n 8000        # at high statistics the gap vanishes
+minos selftest --adversarial   # referee history-dependent memory-LHV adversaries
 minos demo                     # the scarce-vs-plentiful worked example + a best-of-6 scan
 minos plan --S 2.4 --alpha 0.05 --power 0.9   # exact power analysis: 604 rounds needed
 ```
@@ -115,6 +116,45 @@ output says so. An `UNDERPOWERED` verdict now also carries a planning hint: roug
 how many rounds 90% power would take **if** the observed win rate persists — labelled
 as the assumption it is, since the observed rate is an estimate, not the truth.
 
+## The memory loophole, attacked for real: `minos selftest --adversarial`
+
+Claiming memory-robustness is cheap; `minos` attacks itself to earn it. The
+adversarial self-test plays full sequential CHSH games against history-dependent
+local players — each round the adversary picks one of the 16 deterministic local
+strategies as *any* function of all past settings, past outcomes, and private
+randomness; the referee then draws settings from a private RNG stream the
+adversary never sees. The battery ships four adversaries: a memoryless
+bound-saturator, a greedy-denominator attack on the naive per-setting estimator,
+win-stay/lose-shift (outcome memory), and quit-while-ahead (score memory).
+
+The headline measurement (seed 0, 4000 games per point): the greedy-denominator
+adversary — a genuinely local player — drives the field-habit per-setting sigma
+test to a **0.2953 false-positive rate at n = 80** against a nominal 0.05, and
+more data does not fix it (0.2873 at n = 320, 0.2555 at n = 1000, 0.2675 at
+n = 4000). The memory-robust game tail stays within Monte-Carlo noise of the
+exact ceiling `P[Bin(n, 3/4) ≥ c_α(n)]` against every adversary — the same
+exact-binomial quantity `minos plan` is built on. Excerpt at `n = 80`:
+
+```text
+$ minos selftest --adversarial --n 80
+Adversarial memory-loophole self-test: n=80 rounds, 2000 runs per adversary (alpha=0.05)
+  exact ceiling for ANY memory-LHV adversary: P[Bin(80, 3/4) >= 67] = 0.0421
+
+greedy_denominator:
+  certified (all false) : 0.0470  vs exact ceiling 0.0421 (MC sigma 0.0045)  <- bounded
+  naive per-setting     : 0.2940  <- INVALID (inflated)
+  verdicts              : UNDERPOWERED 0.4190, NOT_CERTIFIED 0.5340
+  mean win rate         : 0.7511  (classical bound 0.7500)
+```
+
+The non-obvious part: memory moves *per-setting* statistics, never the pooled
+win count — any history-measurable choice of sacrificed setting keeps the
+conditional win probability at exactly 3/4, so the suite checks that
+sacrifice-class adversaries *match* `Binomial(n, 3/4)` in pooled wins, not
+merely stay below it. That is precisely why `minos` certifies from pooled wins.
+Optional stopping (choosing `n` adaptively) is a different loophole and is
+documented as out of scope.
+
 ## Verdict taxonomy (default-deny)
 
 | Status | Meaning |
@@ -150,18 +190,24 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 | Multiple comparisons | Holm (1979); Benjamini–Hochberg (1995); Bonferroni |
 | Power analysis (`minos plan`) | exact Binomial power against the same game-tail critical count the verdict uses; sawtooth-aware minimal-`n` scan (no Gaussian shortcut) |
 | Coverage validation | Monte-Carlo empirical-coverage harness (in `minos.selftest`) |
+| Adversarial validation | history-dependent memory-LHV adversaries (Barrett et al., PRA 66 042111; Gill quant-ph/0301059) refereed against the exact ceiling `P[Bin(n, 3/4) ≥ c_α]` (in `minos.adversary`) |
 
 ## Tests
 
 ```bash
-python -m pytest        # 107 tests
+python -m pytest        # 137 tests
 ```
 
 The suite covers CHSH certification and its guardrails, both interval methods, the
 multiple-comparison corrections, the default-deny verdict logic, CLI exit codes,
-the Monte-Carlo coverage self-test itself, and the power analysis (hand-computed
+the Monte-Carlo coverage self-test itself, the power analysis (hand-computed
 exact binomial cases, agreement with the shipped verdict on every win count, a
-seeded Monte-Carlo certification-rate cross-check, and the sawtooth regression).
+seeded Monte-Carlo certification-rate cross-check, and the sawtooth regression),
+and the adversarial battery (the derived strategy table, the exact-binomial
+ceiling against every adversary, sacrifice-class pooled wins matching
+`Binomial(n, 3/4)`, rejection of non-local strategy indices, and a regression
+proving an adversary that clones its RNG to peek at upcoming settings gains
+nothing).
 Requires Python 3.11+; CI runs on Python 3.13.
 
 ## License
