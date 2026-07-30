@@ -36,6 +36,7 @@ this provides — is:
 minos selftest --n 80          # naive CHSH false-positive rate ~0.074 vs nominal 0.05
 minos selftest --n 8000        # at high statistics the gap vanishes
 minos demo                     # the scarce-vs-plentiful worked example + a best-of-6 scan
+minos plan --S 2.4 --alpha 0.05 --power 0.9   # exact power analysis: 604 rounds needed
 ```
 
 At `n = 80` the naive observed-SE test **certifies** data the rigorous game tail calls
@@ -68,7 +69,28 @@ study = qr.Study(alpha=0.05, correction="holm")
 study.add("ghz_fidelity_gt_0.9", 6e-4, estimate="F=0.947")
 study.add("chsh_pair_23", r.p_memory_robust, estimate=f"S={r.S:.2f}")
 print(qr.referee_report(study.run(), title="device_run_1"))
+
+# Plan the next run: minimal rounds so certification succeeds with 90% probability
+plan = qr.plan_rounds(qr.s_to_omega(2.4), alpha=0.05, power=0.9)
+print(plan.summary())        # -> 604 rounds, certify iff wins >= 471, exact power 0.9007
 ```
+
+## Planning an experiment: `minos plan`
+
+Before running rounds, ask how many you need: `minos plan --S 2.4 --alpha 0.05
+--power 0.9` (or `--win-rate 0.8`) returns the **minimal** `n` such that the shipped
+certification — the same game-tail criterion `chsh` decides on, reused, not
+reimplemented — succeeds with probability ≥ the target when the per-round win rate
+truly is the hypothesised one. Everything is exact Binomial; no Gaussian
+approximation is used anywhere.
+
+The non-obvious part: exact binomial power is **non-monotone in `n`** (a sawtooth —
+each time the integer critical win count steps up, the power momentarily drops), so
+a bisection over `n` is invalid. `minos` scans and returns the first `n` meeting the
+target; by the same sawtooth, some larger `n` can dip below the target again, and the
+output says so. An `UNDERPOWERED` verdict now also carries a planning hint: roughly
+how many rounds 90% power would take **if** the observed win rate persists — labelled
+as the assumption it is, since the observed rate is an estimate, not the truth.
 
 ## Verdict taxonomy (default-deny)
 
@@ -76,7 +98,7 @@ print(qr.referee_report(study.run(), title="device_run_1"))
 |---|---|
 | `CERTIFIED` | Survives α *after* multiple-comparison correction |
 | `NOT_CERTIFIED` | Fails the threshold, or a decisive non-violation (evidence *against*) |
-| `UNDERPOWERED` | *(CHSH only)* on the violating side but the evidence does not clear α — get more shots |
+| `UNDERPOWERED` | *(CHSH only)* on the violating side but the evidence does not clear α — the summary states roughly how many rounds 90% power would take at the observed win rate (if it persists) |
 | `ASSUMPTIONS_UNMET` | POVM / setting-randomness undeclared → refused, not guessed |
 
 The `Study` verdict emits `CERTIFIED` / `NOT_CERTIFIED` / `ASSUMPTIONS_UNMET`; the
@@ -103,17 +125,21 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 | Memory-robust CHSH p-values | game tail `P[Bin(n, 3/4) ≥ wins]` (Gill martingale / stochastic dominance; Bierhorst). Elkouss–Wehner (npj QI 2016) is a tighter near-optimal refinement, *not implemented* |
 | Conservative CHSH bound | Azuma–Hoeffding |
 | Multiple comparisons | Holm (1979); Benjamini–Hochberg (1995); Bonferroni |
+| Power analysis (`minos plan`) | exact Binomial power against the same game-tail critical count the verdict uses; sawtooth-aware minimal-`n` scan (no Gaussian shortcut) |
 | Coverage validation | Monte-Carlo empirical-coverage harness (in `minos.selftest`) |
 
 ## Tests
 
 ```bash
-python -m pytest        # 67 tests
+python -m pytest        # 107 tests
 ```
 
 The suite covers CHSH certification and its guardrails, both interval methods, the
-multiple-comparison corrections, the default-deny verdict logic, CLI exit codes, and
-the Monte-Carlo coverage self-test itself. CI runs on Python 3.11-3.13.
+multiple-comparison corrections, the default-deny verdict logic, CLI exit codes,
+the Monte-Carlo coverage self-test itself, and the power analysis (hand-computed
+exact binomial cases, agreement with the shipped verdict on every win count, a
+seeded Monte-Carlo certification-rate cross-check, and the sawtooth regression).
+CI runs on Python 3.11-3.13.
 
 ## License
 
