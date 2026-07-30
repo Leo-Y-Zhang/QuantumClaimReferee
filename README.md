@@ -43,6 +43,19 @@ At `n = 80` the naive observed-SE test **certifies** data the rigorous game tail
 **UNDERPOWERED**, and its false-positive rate exceeds α. At `n = 8000` all methods agree.
 The tool earns its keep in the **low-shot / multiple-comparison** regime — and says so.
 
+The scarce-data verdict, verbatim (66 wins in 80 rounds). The naive p-value clears
+0.05 and would certify; the referee refuses, and prices the fix:
+
+```text
+CHSH: S = 2.600  2.6000  [1.8194, 3.1423]  (95% wilson->S, n=80)
+  status              : UNDERPOWERED
+  p (memory-robust)   : 7.399e-02   <- use this
+  p (Azuma, loose)    : 4.066e-01
+  p (naive, observed) : 3.874e-02   (for contrast only)
+  assumptions         : settings_randomised_per_round, no_signaling
+  rounds for power    : ~255 (vs 80 run) for 90% power at alpha=0.05, IF the observed win rate 0.8250 persists
+```
+
 ## Install
 
 ```bash
@@ -83,6 +96,16 @@ certification — the same game-tail criterion `chsh` decides on, reused, not
 reimplemented — succeeds with probability ≥ the target when the per-round win rate
 truly is the hypothesised one. Everything is exact Binomial; no Gaussian
 approximation is used anywhere.
+
+```text
+$ minos plan --S 2.4 --alpha 0.05 --power 0.9
+PLAN: 604 rounds  (hypothesis: win rate 0.8000, S = 2.400)
+  certify iff wins >=  : 471  (alpha=0.05)
+  exact power          : 0.9007  (target 0.9)
+  note                 : minimal n meeting the target; exact binomial
+                         power is sawtoothed, so a larger n can dip
+                         below the target again
+```
 
 The non-obvious part: exact binomial power is **non-monotone in `n`** (a sawtooth —
 each time the integer critical win count steps up, the power momentarily drops), so
@@ -139,7 +162,7 @@ multiple-comparison corrections, the default-deny verdict logic, CLI exit codes,
 the Monte-Carlo coverage self-test itself, and the power analysis (hand-computed
 exact binomial cases, agreement with the shipped verdict on every win count, a
 seeded Monte-Carlo certification-rate cross-check, and the sawtooth regression).
-CI runs on Python 3.11-3.13.
+Requires Python 3.11+; CI runs on Python 3.13.
 
 ## License
 
