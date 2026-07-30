@@ -133,6 +133,13 @@ def naive_persetting_pvalues(
         raise ValueError("setting_counts must have shape (trials, 4)")
     if wins.shape != counts.shape:
         raise ValueError("setting_wins must have the same shape as setting_counts")
+    if not (np.isfinite(counts).all() and np.isfinite(wins).all()):
+        raise ValueError("setting_counts and setting_wins must be finite")
+    if (counts < 0).any() or (wins < 0).any() or (wins > counts).any():
+        # Impossible tallies (e.g. 15 wins of 10 rounds) would yield a negative
+        # variance and a NaN SE that the degenerate branch maps to a CONFIDENT
+        # p = 0 -- a certification from unphysical data. Refuse loudly instead.
+        raise ValueError("per-setting tallies must satisfy 0 <= wins <= counts")
 
     seen_all = (counts > 0).all(axis=1)
     with np.errstate(divide="ignore", invalid="ignore"):
@@ -228,8 +235,15 @@ def chsh_adversarial_false_positive_rates(
     c = critical_wins(n, alpha)  # validates alpha
     ceiling = certification_power(n, CLASSICAL_WIN, alpha=alpha)
 
+    battery = tuple(adversaries) if adversaries is not None else default_adversaries()
+    names = [adversary.name for adversary in battery]
+    if len(set(names)) != len(names):
+        # Reports are keyed by name; a duplicate would silently overwrite the
+        # earlier adversary's scorecard after both batteries were paid for.
+        raise ValueError(f"adversary names must be unique, got {sorted(names)}")
+
     reports: dict[str, AdversarialReport] = {}
-    for adversary in adversaries if adversaries is not None else default_adversaries():
+    for adversary in battery:
         runs = play_chsh_game(adversary, n, trials, seed=seed)
         certified = runs.wins >= c
         not_certified = ~certified & (4 * runs.wins <= 3 * n)  # omega <= 3/4

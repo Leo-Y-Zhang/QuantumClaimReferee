@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from scipy.stats import norm
 
-from minos.adversary import default_adversaries
+from minos.adversary import GreedyDenominatorAdversary, default_adversaries
 from minos.power import certification_power
 from minos.selftest import (
     AdversarialReport,
@@ -81,6 +81,19 @@ def test_naive_persetting_pvalues_input_validation():
         naive_persetting_pvalues(np.zeros((3, 4)), np.zeros((2, 4)))
 
 
+def test_naive_persetting_pvalues_reject_impossible_tallies():
+    # 15 wins of 10 rounds gives negative variance and a NaN SE, which the
+    # degenerate branch used to map to a CONFIDENT p = 0 (a certification from
+    # unphysical data). Impossible tallies must raise, never certify.
+    counts = np.array([[10, 10, 10, 10]])
+    with pytest.raises(ValueError):
+        naive_persetting_pvalues(counts, np.array([[15, 10, 10, 10]]))  # wins > counts
+    with pytest.raises(ValueError):
+        naive_persetting_pvalues(counts, np.array([[-5, 10, 10, 10]]))  # negative wins
+    with pytest.raises(ValueError):
+        naive_persetting_pvalues(np.array([[np.nan, 10, 10, 10]]), np.array([[5, 10, 10, 10]]))
+
+
 # ------------------------------------------- adversarial memory-loophole mode
 
 
@@ -108,7 +121,7 @@ def test_greedy_denominator_blows_up_the_naive_persetting_test():
     # The centrepiece measurement. The greedy-denominator adversary steers its
     # losses into the settings with the largest current counts; that inflates the
     # naive per-setting S_hat AND shrinks its plug-in SE at once. Measured at
-    # seed 0: naive FPR 0.2908 at n=80 against a nominal 0.05, while the
+    # seed 0: naive FPR 0.2953 at n=80 against a nominal 0.05, while the
     # memory-robust certification rate stays at the exact binomial ceiling.
     reports = chsh_adversarial_false_positive_rates(80, trials=4000, seed=0)
     greedy = reports["greedy_denominator"]
@@ -125,8 +138,8 @@ def test_greedy_denominator_blows_up_the_naive_persetting_test():
 def test_greedy_denominator_naive_inflation_does_not_vanish_with_n():
     # Unlike the pooled naive-SE gap (which closes by n=8000, see
     # test_naive_and_rigorous_agree_at_large_n), the memory attack on the
-    # per-setting estimator scales with its SE: measured naive FPR 0.2908 at
-    # n=80 and 0.2762 at n=320 (seed 0). More data does not fix it; only the
+    # per-setting estimator scales with its SE: measured naive FPR 0.2953 at
+    # n=80 and 0.2873 at n=320 (seed 0). More data does not fix it; only the
     # memory-robust game tail does.
     small = chsh_adversarial_false_positive_rates(80, trials=4000, seed=0)
     large = chsh_adversarial_false_positive_rates(320, trials=4000, seed=0)
@@ -149,3 +162,14 @@ def test_adversarial_rejects_bad_inputs():
         chsh_adversarial_false_positive_rates(0)
     with pytest.raises(ValueError):
         chsh_adversarial_false_positive_rates(40, trials=0)
+
+
+def test_adversarial_rejects_duplicate_adversary_names():
+    # Reports are keyed by adversary name; two same-named adversaries would
+    # silently overwrite one scorecard. Refuse up front, before any battery runs.
+    with pytest.raises(ValueError):
+        chsh_adversarial_false_positive_rates(
+            20,
+            trials=10,
+            adversaries=(GreedyDenominatorAdversary(), GreedyDenominatorAdversary()),
+        )

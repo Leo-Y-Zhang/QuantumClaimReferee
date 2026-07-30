@@ -18,15 +18,29 @@ The model is the fully general deterministic-per-round memory-LHV adversary:
 * the round is won iff ``a(x) XOR b(y) == x AND y``.
 
 Randomised (mixed) strategies are covered because the choice may use the supplied
-RNG. The physics constraint is *structural*, not assumed: the win table is derived
-from the game rule at import time, and no deterministic local strategy wins more
-than 3 of the 4 equally likely setting pairs (they win exactly 1 or 3 -- the four
-CHSH targets XOR to 1, so no strategy can satisfy an even number of them). Hence
-every adversary representable here has conditional win probability at most ``3/4``
-given any history, the total win count is stochastically dominated by
-``Binomial(n, 3/4)``, and :func:`minos.chsh.game_tail_pvalue` remains a valid
-p-value against all of them (Gill, quant-ph/0301059). The self-test checks that
-empirically rather than trusting the theorem.
+RNG. Two structural enforcement points make the model honest, and both matter:
+
+* *Locality per round*: strategy indices are range-checked every round, so every
+  play is one of the 16 deterministic local strategies. The win table is derived
+  from the game rule at import time, and no deterministic local strategy wins
+  more than 3 of the 4 equally likely setting pairs (they win exactly 1 or 3 --
+  the four CHSH targets XOR to 1, so no strategy can satisfy an even number of
+  them).
+* *Settings independence*: the referee draws settings from a **private**
+  generator that is never passed to the adversary. The adversary's generator is
+  spawned from the same seed but is statistically independent, so nothing
+  reachable from :meth:`MemoryLHVAdversary.strategies` -- including cloning or
+  exhausting its own RNG -- predicts the coming settings. (An earlier draft
+  shared one generator between referee and adversary; a subclass that deep-copied
+  it could read off the upcoming settings and win every round while passing the
+  range checks. The regression test keeps that door shut.)
+
+Together these give every adversary representable here conditional win
+probability at most ``3/4`` given any history, so the total win count is
+stochastically dominated by ``Binomial(n, 3/4)`` and
+:func:`minos.chsh.game_tail_pvalue` remains a valid p-value against all of them
+(Gill, quant-ph/0301059). The self-test checks that empirically rather than
+trusting the theorem.
 
 A sharper consequence worth knowing: an adversary whose only freedom is *which*
 setting pair to sacrifice (playing a best 3-of-4 strategy every round) has
@@ -130,7 +144,10 @@ class MemoryLHVAdversary:
     Subclasses implement :meth:`strategies`, returning one deterministic local
     strategy index (``0..15``) per trial for the coming round. The choice may
     depend on the full :class:`GameHistory` and on ``rng`` (mixed strategies);
-    it cannot depend on the coming round's settings, which are drawn afterwards.
+    it cannot depend on the coming round's settings, which are drawn afterwards
+    from the referee's private generator -- ``rng`` here is the adversary's own
+    stream, independent of the referee's, so inspecting or cloning it reveals
+    nothing about the settings to come.
     """
 
     name: str = "memory_lhv"
@@ -266,16 +283,22 @@ def play_chsh_game(
     """Referee ``trials`` parallel CHSH games of ``rounds`` rounds each.
 
     Each round the adversary commits its strategies first (seeing only the
-    history), then the referee draws settings uniformly at random. Strategy
-    indices are range-checked every round: any value in ``0..15`` is a genuine
-    deterministic local strategy, so a passing run is LHV by construction.
+    history), then the referee draws settings uniformly at random from a
+    *private* generator the adversary is never handed -- the adversary's own
+    generator is spawned independently from the same seed, so peeking at,
+    cloning, or exhausting it reveals nothing about the coming settings.
+    Strategy indices are range-checked every round: any value in ``0..15`` is a
+    genuine deterministic local strategy. Together the two checks make a
+    passing run LHV with independently drawn settings by construction.
     """
     if rounds <= 0:
         raise ValueError("rounds must be positive")
     if trials <= 0:
         raise ValueError("trials must be positive")
 
-    rng = np.random.default_rng(seed)
+    adversary_seq, referee_seq = np.random.SeedSequence(seed).spawn(2)
+    adversary_rng = np.random.default_rng(adversary_seq)
+    referee_rng = np.random.default_rng(referee_seq)
     history = GameHistory(
         rounds_played=0,
         setting_counts=np.zeros((trials, N_SETTINGS), dtype=np.int64),
@@ -284,11 +307,11 @@ def play_chsh_game(
         last_setting=np.full(trials, -1, dtype=np.int64),
         last_won=np.zeros(trials, dtype=bool),
     )
-    adversary.begin(trials, rng)
+    adversary.begin(trials, adversary_rng)
     rows = np.arange(trials)
 
     for _ in range(rounds):
-        strategies = np.asarray(adversary.strategies(history, rng))
+        strategies = np.asarray(adversary.strategies(history, adversary_rng))
         if strategies.shape != (trials,):
             raise ValueError(
                 f"adversary returned shape {strategies.shape}, expected ({trials},)"
@@ -300,7 +323,7 @@ def play_chsh_game(
                 "strategy index out of range 0..15: not a deterministic local strategy"
             )
 
-        settings = rng.integers(0, N_SETTINGS, size=trials)
+        settings = referee_rng.integers(0, N_SETTINGS, size=trials)
         won = STRATEGY_WIN_TABLE[strategies, settings]
 
         history.setting_counts[rows, settings] += 1

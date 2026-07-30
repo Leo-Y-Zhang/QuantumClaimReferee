@@ -1,3 +1,4 @@
+import copy
 import math
 
 import numpy as np
@@ -84,6 +85,38 @@ def test_simulator_rejects_non_lhv_strategy_indices():
     # deterministic local strategies, and the simulator enforces it.
     with pytest.raises(ValueError):
         play_chsh_game(_CheatingAdversary(), 5, 4, seed=0)
+
+
+class _RngPeekingAdversary(MemoryLHVAdversary):
+    """Deep-copies its RNG each round and plays a strategy winning the setting
+    the clone predicts. Against a shared referee/adversary generator this
+    attack read the true upcoming settings straight off the stream and won
+    every round while passing all structural checks."""
+
+    name = "rng_peeker"
+
+    def strategies(self, history, rng):
+        clone = copy.deepcopy(rng)
+        predicted = clone.integers(0, 4, size=history.wins.shape[0])
+        # sacrifice a pair it did NOT predict, so it wins the predicted setting
+        return SACRIFICE_TO_STRATEGY[(predicted + 1) % 4]
+
+
+def test_rng_peeking_adversary_cannot_predict_the_referee_settings():
+    # Regression for a real hole: the referee now draws settings from a
+    # PRIVATE generator, so an adversary that clones its own rng to peek ahead
+    # gains nothing. It always plays a 3-of-4 strategy chosen independently of
+    # the true settings, so its wins are exactly Binomial(n, 3/4) -- against
+    # the shared-generator draft this same adversary had win rate 1.0.
+    n, trials, alpha = 200, 400, 0.05
+    runs = play_chsh_game(_RngPeekingAdversary(), n, trials, seed=0)
+    mean_rate = float(runs.wins.mean()) / n
+    mc_sigma = math.sqrt(CLASSICAL_WIN * (1.0 - CLASSICAL_WIN) / (n * trials))
+    assert abs(mean_rate - CLASSICAL_WIN) < 5.0 * mc_sigma
+    c = critical_wins(n, alpha)
+    ceiling = certification_power(n, CLASSICAL_WIN, alpha=alpha)
+    emp = float(np.mean(runs.wins >= c))
+    assert emp <= ceiling + 4.0 * math.sqrt(ceiling * (1.0 - ceiling) / trials)
 
 
 # ------------------------------------------------- adversary behaviour traits
