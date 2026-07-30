@@ -31,6 +31,42 @@ def test_selftest_runs(capsys):
     assert "false-positive" in capsys.readouterr().out
 
 
+def test_chsh_underpowered_summary_includes_plan_hint(capsys):
+    rc = main(["chsh", "--wins", "66", "--rounds", "80", "--randomised"])
+    assert rc == 1
+    assert "90% power" in capsys.readouterr().out
+
+
+def test_plan_with_s(capsys):
+    rc = main(["plan", "--S", "2.4", "--alpha", "0.05", "--power", "0.9"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "604" in out  # rounds needed
+    assert "471" in out  # implied critical win count
+
+
+def test_plan_with_win_rate(capsys):
+    rc = main(["plan", "--win-rate", "0.9"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "PLAN: 55 rounds" in out
+
+
+def test_plan_requires_exactly_one_of_s_and_win_rate():
+    with pytest.raises(SystemExit) as exc:
+        main(["plan", "--S", "2.4", "--win-rate", "0.9"])
+    assert exc.value.code == 2
+    with pytest.raises(SystemExit) as exc:
+        main(["plan"])
+    assert exc.value.code == 2
+
+
+def test_plan_rejects_s_at_or_below_local_bound():
+    with pytest.raises(SystemExit) as exc:
+        main(["plan", "--S", "2.0"])
+    assert exc.value.code == 2
+
+
 def test_demo_runs():
     assert main(["demo"]) == 0
 

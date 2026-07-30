@@ -5,7 +5,7 @@ Fully offline. Run:  python examples/run_example.py
 
 from __future__ import annotations
 
-from minos import chsh, referee_report
+from minos import chsh, plan_rounds, referee_report, s_to_omega
 from minos.selftest import chsh_null_false_positive_rates
 from minos.verdict import Study
 
@@ -41,6 +41,10 @@ def main() -> None:
         estimate="S=2.72 (few shots)",
     )
     print(referee_report(study.run(), title="ghz3_device_run"))
+
+    print("\n=== 5) Plan the next run instead of guessing ===")
+    print("Rounds needed to certify a hypothesised S=2.4 at alpha=0.05, 90% power:")
+    print(plan_rounds(s_to_omega(2.4), alpha=0.05, power=0.9).summary())
 
 
 if __name__ == "__main__":

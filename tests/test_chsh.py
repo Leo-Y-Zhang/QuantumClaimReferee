@@ -49,6 +49,21 @@ def test_regime_a_scarce_data_underpowered():
     assert r.status == "UNDERPOWERED"
 
 
+def test_underpowered_summary_states_rounds_needed():
+    # plan_rounds(0.825, alpha=0.05, power=0.9) -> 255 rounds; the UNDERPOWERED
+    # summary must surface that hint, honestly labelled with the assumed power.
+    r = chsh(66, 80, setting_randomness_declared=True)
+    text = r.summary()
+    assert "255" in text
+    assert "90% power" in text
+    assert "observed" in text
+
+
+def test_certified_summary_has_no_plan_hint():
+    text = chsh(6400, 8000, setting_randomness_declared=True).summary()
+    assert "90% power" not in text
+
+
 def test_azuma_is_looser_than_exact():
     r = chsh(66, 80, setting_randomness_declared=True)
     assert r.p_azuma > r.p_memory_robust

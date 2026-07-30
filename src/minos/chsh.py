@@ -98,13 +98,39 @@ class CHSHResult:
         return self.status == CERTIFIED
 
     def summary(self) -> str:
-        return (
+        text = (
             f"CHSH: S = {self.S:.3f}  {self.S_ci}\n"
             f"  status              : {self.status}\n"
             f"  p (memory-robust)   : {self.p_memory_robust:.3e}   <- use this\n"
             f"  p (Azuma, loose)    : {self.p_azuma:.3e}\n"
             f"  p (naive, observed) : {self.p_naive_observed:.3e}   (for contrast only)\n"
             f"  assumptions         : {', '.join(self.assumptions) or 'none declared'}"
+        )
+        if self.status == UNDERPOWERED:
+            text += "\n  rounds for power    : " + self._plan_hint()
+        return text
+
+    def _plan_hint(self) -> str:
+        """How many rounds ~90% certification power would take at the observed rate.
+
+        Honest labelling: the hint assumes the observed win rate persists (it is an
+        estimate, not the truth) and states the assumed power explicitly. Exact
+        binomial power analysis, same threshold as the verdict (:mod:`minos.power`).
+        """
+        from .power import plan_rounds  # local import: power imports this module
+
+        cap = 100_000
+        try:
+            plan = plan_rounds(self.omega, alpha=self.alpha, power=0.9, max_rounds=cap)
+        except ValueError:
+            return (
+                f"more than {cap} (scan cap) for 90% power at the observed win "
+                f"rate {self.omega:.4f} -- if that rate is real, it is a whisker "
+                f"above the local bound"
+            )
+        return (
+            f"~{plan.rounds} (vs {self.rounds} run) for 90% power at alpha="
+            f"{self.alpha}, IF the observed win rate {self.omega:.4f} persists"
         )
 
 

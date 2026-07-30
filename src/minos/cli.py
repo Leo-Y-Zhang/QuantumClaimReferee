@@ -10,7 +10,8 @@ import argparse
 import sys
 
 from ._version import __version__
-from .chsh import chsh
+from .chsh import chsh, s_to_omega
+from .power import DEFAULT_MAX_ROUNDS, plan_rounds
 from .selftest import binomial_interval_coverage, chsh_null_false_positive_rates
 from .verdict import Study
 
@@ -24,6 +25,18 @@ def _cmd_chsh(args: argparse.Namespace) -> int:
     )
     print(result.summary())
     return 0 if result.certified else 1
+
+
+def _cmd_plan(args: argparse.Namespace) -> int:
+    win_rate = args.win_rate if args.win_rate is not None else s_to_omega(args.S)
+    plan = plan_rounds(
+        win_rate,
+        alpha=args.alpha,
+        power=args.power,
+        max_rounds=args.max_rounds,
+    )
+    print(plan.summary())
+    return 0
 
 
 def _cmd_selftest(args: argparse.Namespace) -> int:
@@ -58,6 +71,8 @@ def _cmd_demo(_args: argparse.Namespace) -> int:
     for i, p in enumerate([0.03, 0.21, 0.44, 0.61, 0.77, 0.90]):
         study.add(f"pair_{i}", p)
     print(study.run().summary())
+    print("\nPlanning ahead: rounds needed to certify S=2.4 with 90% power:")
+    print(plan_rounds(s_to_omega(2.4), alpha=0.05, power=0.9).summary())
     return 0
 
 
@@ -76,6 +91,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="affirm settings were randomised per round (required to certify)",
     )
     p_chsh.set_defaults(func=_cmd_chsh)
+
+    p_plan = sub.add_parser(
+        "plan",
+        help="exact power analysis: minimal rounds to certify at alpha with target power",
+    )
+    hypo = p_plan.add_mutually_exclusive_group(required=True)
+    hypo.add_argument("--S", type=float, help="hypothesised CHSH value (2 < S <= 2*sqrt(2))")
+    hypo.add_argument(
+        "--win-rate",
+        type=float,
+        dest="win_rate",
+        help="hypothesised per-round win probability (3/4 < p <= 1)",
+    )
+    p_plan.add_argument("--alpha", type=float, default=0.05)
+    p_plan.add_argument("--power", type=float, default=0.9)
+    p_plan.add_argument("--max-rounds", type=int, default=DEFAULT_MAX_ROUNDS)
+    p_plan.set_defaults(func=_cmd_plan)
 
     p_self = sub.add_parser("selftest", help="run coverage / calibration self-tests")
     p_self.add_argument("--n", type=int, default=80)
