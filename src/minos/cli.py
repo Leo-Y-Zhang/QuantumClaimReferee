@@ -10,9 +10,13 @@ import argparse
 import sys
 
 from ._version import __version__
-from .chsh import chsh, s_to_omega
-from .power import DEFAULT_MAX_ROUNDS, plan_rounds
-from .selftest import binomial_interval_coverage, chsh_null_false_positive_rates
+from .chsh import CLASSICAL_WIN, chsh, s_to_omega
+from .power import DEFAULT_MAX_ROUNDS, certification_power, critical_wins, plan_rounds
+from .selftest import (
+    binomial_interval_coverage,
+    chsh_adversarial_false_positive_rates,
+    chsh_null_false_positive_rates,
+)
 from .verdict import Study
 
 
@@ -43,10 +47,48 @@ def _cmd_selftest(args: argparse.Namespace) -> int:
     n = args.n
     if n <= 0:
         raise ValueError("--n must be a positive integer")
-    if args.trials <= 0:
+    # the sequential adversarial games cost more per trial than the vectorised
+    # null sweep, so the two modes get different default trial counts
+    trials = args.trials if args.trials is not None else (2_000 if args.adversarial else 100_000)
+    if trials <= 0:
         raise ValueError("--trials must be a positive integer")
+    if args.adversarial:
+        return _selftest_adversarial(n, trials)
+    return _selftest_null(n, trials)
+
+
+def _selftest_adversarial(n: int, trials: int) -> int:
+    alpha = 0.05
+    c = critical_wins(n, alpha)
+    ceiling = certification_power(n, CLASSICAL_WIN, alpha=alpha)
+    print(
+        f"Adversarial memory-loophole self-test: n={n} rounds, {trials} runs per "
+        f"adversary (alpha={alpha})"
+    )
+    print(
+        f"  exact ceiling for ANY memory-LHV adversary: "
+        f"P[Bin({n}, 3/4) >= {c}] = {ceiling:.4f}"
+    )
+    print(
+        "  (outcomes may depend on all past settings and outcomes; the game tail"
+        " must stay at or below the ceiling, the naive per-setting sigma test"
+        " has no such guarantee)\n"
+    )
+    for report in chsh_adversarial_false_positive_rates(n, alpha=alpha, trials=trials).values():
+        print(report.summary())
+        print()
+    print(
+        "note: more rounds cannot rescue a true LHV source -- minos plan refuses\n"
+        "      win rates at or below 3/4 (the certify probability never exceeds\n"
+        "      alpha there), and UNDERPOWERED verdicts on such data price a\n"
+        "      follow-up that will again fail with probability >= 1 - alpha."
+    )
+    return 0
+
+
+def _selftest_null(n: int, trials: int) -> int:
     print(f"CHSH null false-positive rates at n={n} (nominal alpha=0.05):")
-    fpr = chsh_null_false_positive_rates(n, trials=args.trials)
+    fpr = chsh_null_false_positive_rates(n, trials=trials)
     for name, rate in fpr.items():
         flag = ""
         if name == "memory_robust":
@@ -55,7 +97,7 @@ def _cmd_selftest(args: argparse.Namespace) -> int:
             flag = "  <- INVALID (inflated)" if rate > 0.055 else ""
         print(f"  {name:<16}: {rate:.4f}{flag}")
     print(f"\nWilson interval coverage at p=0.9, n={n} (nominal 0.95):")
-    cov = binomial_interval_coverage("wilson", 0.9, n, trials=args.trials)
+    cov = binomial_interval_coverage("wilson", 0.9, n, trials=trials)
     print(f"  wilson          : {cov:.4f}")
     return 0
 
@@ -111,7 +153,20 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_self = sub.add_parser("selftest", help="run coverage / calibration self-tests")
     p_self.add_argument("--n", type=int, default=80)
-    p_self.add_argument("--trials", type=int, default=100_000)
+    p_self.add_argument(
+        "--trials",
+        type=int,
+        default=None,
+        help="Monte-Carlo runs (default 100000, or 2000 with --adversarial)",
+    )
+    p_self.add_argument(
+        "--adversarial",
+        action="store_true",
+        help=(
+            "referee history-dependent memory-LHV adversaries (outcomes may depend"
+            " on past settings and outcomes) and check every one stays bounded"
+        ),
+    )
     p_self.set_defaults(func=_cmd_selftest)
 
     p_demo = sub.add_parser("demo", help="print the worked wedge example")

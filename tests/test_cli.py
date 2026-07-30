@@ -31,6 +31,38 @@ def test_selftest_runs(capsys):
     assert "false-positive" in capsys.readouterr().out
 
 
+def test_selftest_adversarial_runs(capsys):
+    rc = main(["selftest", "--adversarial", "--n", "40", "--trials", "300"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "memory-loophole" in out
+    assert "ceiling" in out
+    # the whole battery is reported
+    for name in (
+        "memoryless_saturator",
+        "greedy_denominator",
+        "win_stay_lose_shift",
+        "quit_while_ahead",
+    ):
+        assert name in out
+    # the plan-machinery tie-in is stated
+    assert "minos plan" in out
+
+
+def test_selftest_adversarial_default_trials_is_scaled_down(capsys):
+    # the sequential-game simulation is heavier per trial than the vectorised
+    # null sweep, so --adversarial defaults to 2000 trials instead of 100000
+    rc = main(["selftest", "--adversarial", "--n", "30"])
+    assert rc == 0
+    assert "2000 runs" in capsys.readouterr().out
+
+
+def test_selftest_bad_trials_is_usage_error():
+    with pytest.raises(SystemExit) as exc:
+        main(["selftest", "--trials", "-5"])
+    assert exc.value.code == 2
+
+
 def test_chsh_underpowered_summary_includes_plan_hint(capsys):
     rc = main(["chsh", "--wins", "66", "--rounds", "80", "--randomised"])
     assert rc == 1
