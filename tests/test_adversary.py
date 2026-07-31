@@ -1,4 +1,5 @@
 import copy
+import dataclasses
 import math
 
 import numpy as np
@@ -8,6 +9,7 @@ from minos.adversary import (
     SACRIFICE_TO_STRATEGY,
     STRATEGY_WIN_TABLE,
     FixedSacrificeAdversary,
+    GameHistory,
     GreedyDenominatorAdversary,
     MemoryLHVAdversary,
     QuitWhileAheadAdversary,
@@ -117,6 +119,85 @@ def test_rng_peeking_adversary_cannot_predict_the_referee_settings():
     ceiling = certification_power(n, CLASSICAL_WIN, alpha=alpha)
     emp = float(np.mean(runs.wins >= c))
     assert emp <= ceiling + 4.0 * math.sqrt(ceiling * (1.0 - ceiling) / trials)
+
+
+class _LedgerCookingAdversary(MemoryLHVAdversary):
+    """Tries to write the referee's win tally instead of playing better."""
+
+    name = "ledger_cooker"
+
+    def strategies(self, history, rng):
+        history.wins += 10  # must raise: the snapshot arrays are read-only
+        return np.full(history.wins.shape[0], int(SACRIFICE_TO_STRATEGY[3]), dtype=np.int64)
+
+
+class _LedgerReplacingAdversary(MemoryLHVAdversary):
+    """Tries to swap the referee's win tally for a fabricated array."""
+
+    name = "ledger_replacer"
+
+    def strategies(self, history, rng):
+        history.wins = np.full(history.wins.shape[0], 10**6)  # must raise: frozen
+        return np.full(history.wins.shape[0], int(SACRIFICE_TO_STRATEGY[3]), dtype=np.int64)
+
+
+def test_adversary_cannot_mutate_the_referee_ledger():
+    # Regression for a real hole: an earlier draft handed strategies() the live
+    # tally arrays, so `history.wins += 10` recorded physically impossible win
+    # counts (measured: 869 wins of 80 rounds) with no error, certifying 100%.
+    # The snapshot arrays are now read-only; the write itself must raise.
+    with pytest.raises(ValueError):
+        play_chsh_game(_LedgerCookingAdversary(), 5, 4, seed=0)
+
+
+def test_adversary_cannot_replace_the_referee_ledger():
+    # Reassigning a field is the other write path; GameHistory is frozen.
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        play_chsh_game(_LedgerReplacingAdversary(), 5, 4, seed=0)
+
+
+def test_history_arrays_are_readonly_copies_detached_from_the_ledger():
+    # The snapshots must be non-writeable AND own their memory (.base is None):
+    # a read-only VIEW would still expose the referee's live arrays via .base.
+    seen = {"writeable": [], "detached": []}
+
+    class _Probe(MemoryLHVAdversary):
+        name = "probe"
+
+        def strategies(self, history, rng):
+            arrays = (
+                history.setting_counts,
+                history.setting_wins,
+                history.wins,
+                history.last_setting,
+                history.last_won,
+            )
+            seen["writeable"].extend(a.flags.writeable for a in arrays)
+            seen["detached"].extend(a.base is None for a in arrays)
+            return np.full(history.wins.shape[0], int(SACRIFICE_TO_STRATEGY[3]), dtype=np.int64)
+
+    runs = play_chsh_game(_Probe(), 3, 2, seed=0)
+    assert seen["writeable"] and not any(seen["writeable"])
+    assert all(seen["detached"])
+    # and the run itself still scores normally
+    assert runs.wins.shape == (2,) and np.all(runs.wins <= 3)
+
+
+def test_win_stay_lose_shift_requires_begin_even_under_optimizations():
+    # Guarding with a bare assert would be stripped under python -O, after which
+    # SACRIFICE_TO_STRATEGY[None] silently broadcasts to a wrong-shape (1, 4)
+    # array (numpy treats None as np.newaxis). Must be a real RuntimeError.
+    trials = 3
+    history = GameHistory(
+        rounds_played=0,
+        setting_counts=np.zeros((trials, 4), dtype=np.int64),
+        setting_wins=np.zeros((trials, 4), dtype=np.int64),
+        wins=np.zeros(trials, dtype=np.int64),
+        last_setting=np.full(trials, -1, dtype=np.int64),
+        last_won=np.zeros(trials, dtype=bool),
+    )
+    with pytest.raises(RuntimeError):
+        WinStayLoseShiftAdversary().strategies(history, np.random.default_rng(0))
 
 
 # ------------------------------------------------- adversary behaviour traits

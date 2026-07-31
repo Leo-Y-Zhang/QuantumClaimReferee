@@ -94,6 +94,20 @@ def test_naive_persetting_pvalues_reject_impossible_tallies():
         naive_persetting_pvalues(np.array([[np.nan, 10, 10, 10]]), np.array([[5, 10, 10, 10]]))
 
 
+def test_naive_persetting_pvalues_reject_fractional_tallies():
+    # Half a round is as unphysical as 15 wins of 10: fractional tallies used
+    # to slip past the impossible-tally validation and return a confident
+    # p-value (0.2398 from counts 0.5, wins 0.25). Same discipline: raise.
+    with pytest.raises(ValueError):
+        naive_persetting_pvalues(
+            np.array([[0.5, 0.5, 0.5, 0.5]]), np.array([[0.25, 0.5, 0.5, 0.5]])
+        )
+    with pytest.raises(ValueError):
+        naive_persetting_pvalues(
+            np.array([[10, 10, 10, 10]]), np.array([[9.5, 10, 10, 10]])
+        )
+
+
 # ------------------------------------------- adversarial memory-loophole mode
 
 

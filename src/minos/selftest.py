@@ -140,6 +140,10 @@ def naive_persetting_pvalues(
         # variance and a NaN SE that the degenerate branch maps to a CONFIDENT
         # p = 0 -- a certification from unphysical data. Refuse loudly instead.
         raise ValueError("per-setting tallies must satisfy 0 <= wins <= counts")
+    if (counts % 1 != 0).any() or (wins % 1 != 0).any():
+        # Fractional "round counts" are equally unphysical and would otherwise
+        # produce an equally confident p-value. Same discipline: refuse loudly.
+        raise ValueError("per-setting tallies must be whole numbers of rounds")
 
     seen_all = (counts > 0).all(axis=1)
     with np.errstate(divide="ignore", invalid="ignore"):
