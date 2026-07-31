@@ -123,7 +123,9 @@ adversarial self-test plays full sequential CHSH games against history-dependent
 local players — each round the adversary picks one of the 16 deterministic local
 strategies as *any* function of all past settings, past outcomes, and private
 randomness; the referee then draws settings from a private RNG stream the
-adversary never sees. The battery ships four adversaries: a memoryless
+adversary never sees, and tallies the score in a private ledger the adversary
+can read but never write (history snapshots are frozen and read-only — cooking
+the score raises, it does not certify). The battery ships four adversaries: a memoryless
 bound-saturator, a greedy-denominator attack on the naive per-setting estimator,
 win-stay/lose-shift (outcome memory), and quit-while-ahead (score memory).
 
@@ -195,7 +197,7 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 ## Tests
 
 ```bash
-python -m pytest        # 137 tests
+python -m pytest        # 142 tests
 ```
 
 The suite covers CHSH certification and its guardrails, both interval methods, the
@@ -205,9 +207,10 @@ exact binomial cases, agreement with the shipped verdict on every win count, a
 seeded Monte-Carlo certification-rate cross-check, and the sawtooth regression),
 and the adversarial battery (the derived strategy table, the exact-binomial
 ceiling against every adversary, sacrifice-class pooled wins matching
-`Binomial(n, 3/4)`, rejection of non-local strategy indices, and a regression
-proving an adversary that clones its RNG to peek at upcoming settings gains
-nothing).
+`Binomial(n, 3/4)`, rejection of non-local strategy indices, regressions
+proving that an adversary that clones its RNG to peek at upcoming settings
+gains nothing and that one that tries to write the referee's score ledger
+raises instead of certifying).
 Requires Python 3.11+; CI runs on Python 3.13.
 
 ## License

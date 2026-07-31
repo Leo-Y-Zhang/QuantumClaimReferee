@@ -13,10 +13,12 @@ All notable changes to this project are documented here. The format is based on
   the fully general deterministic-per-round memory-LHV adversary: each round it
   commits one of the 16 deterministic local strategy pairs as any function of
   all past settings, past outcomes, and private randomness; the referee then
-  draws settings from a private RNG stream the adversary never sees. Both
+  draws settings from a private RNG stream the adversary never sees. The
   constraints are structural: strategy indices are range-checked every round,
-  and a regression test proves an adversary that clones its own generator to
-  peek ahead stays at the classical bound.
+  the score is tallied in referee-private arrays (the adversary sees only
+  frozen read-only history snapshots, so writing the score raises), and a
+  regression test proves an adversary that clones its own generator to peek
+  ahead stays at the classical bound.
 - The shipped battery: a memoryless bound-saturator reference, a
   greedy-denominator adversary (one-step-optimal attack on the naive
   per-setting correlator estimator, derivation in its docstring), a
@@ -40,11 +42,25 @@ All notable changes to this project are documented here. The format is based on
   documented as out of scope for the simulator.
 
 ### Fixed
+- The game referee no longer hands adversaries its live score arrays. An
+  earlier draft passed the mutable tally ledger to `strategies()`, so an
+  adversary that wrote `history.wins += 10` recorded physically impossible
+  scores (measured: 869 wins of 80 rounds) with no error -- contradicting the
+  structural-enforcement claim. The ledger is now referee-private: adversaries
+  receive frozen `GameHistory` snapshots whose arrays are read-only copies
+  owning their memory, both write paths (in-place and field reassignment)
+  raise, and a post-game integrity check guards the tally invariants. The
+  shipped battery only ever read its history, so no previously published
+  number changes (re-verified: the measured rates above reproduce exactly).
 - Impossible per-setting tallies (wins above counts, negative wins, non-finite
-  entries) passed to `naive_persetting_pvalues` now raise instead of silently
-  yielding a confident p-value from unphysical data.
+  or fractional entries) passed to `naive_persetting_pvalues` now raise
+  instead of silently yielding a confident p-value from unphysical data.
 - `chsh_adversarial_false_positive_rates` rejects duplicate adversary names up
   front instead of silently overwriting one scorecard.
+- `WinStayLoseShiftAdversary.strategies()` before `begin()` now raises a real
+  `RuntimeError`; the previous bare `assert` was stripped under `python -O`,
+  after which numpy silently broadcast the `None` state to a wrong-shape
+  strategy array.
 
 ## [0.2.0] - 2026-07-30
 
