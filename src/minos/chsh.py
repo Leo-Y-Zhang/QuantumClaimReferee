@@ -267,4 +267,18 @@ def wins_from_setting_counts(
                 wins += c
     if rounds == 0:
         raise ValueError("no rounds supplied")
+    # The CHSH game is defined over all four input pairs; a run that never
+    # presented one of them has not played it. Accepting a partial dict let a
+    # dropped job turn a purely classical device into a certified violation: with
+    # only (0,0), answering a=b=0 every round wins every round, so omega=1 and
+    # S=4.0 at p=0. selftest.py already checks this with `seen_all`; the flagship
+    # entry point did not.
+    missing = {(x, y) for x in (0, 1) for y in (0, 1)} - set(counts)
+    if missing:
+        listed = ", ".join(f"({x},{y})" for x, y in sorted(missing))
+        raise ValueError(
+            f"the CHSH game needs all four input pairs; missing {listed}. "
+            f"Pooling an incomplete run understates the local bound and can "
+            f"certify a classical device"
+        )
     return wins, rounds

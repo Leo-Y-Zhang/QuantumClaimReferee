@@ -104,10 +104,64 @@ def test_wins_from_setting_counts_rejects_out_of_domain_keys():
 def test_wins_from_setting_counts():
     counts = {
         (0, 0): {(0, 0): 10, (1, 1): 5, (0, 1): 3},  # win iff a==b -> 15 wins / 18
+        (0, 1): {(0, 0): 4, (1, 0): 2},  # win iff a==b -> 4 wins / 6
+        (1, 0): {(1, 1): 6, (0, 1): 1},  # win iff a==b -> 6 wins / 7
         (1, 1): {(0, 1): 7, (1, 0): 2, (0, 0): 1},  # win iff a!=b -> 9 wins / 10
     }
     wins, rounds = wins_from_setting_counts(counts)
-    assert (wins, rounds) == (15 + 9, 18 + 10)
+    assert (wins, rounds) == (15 + 4 + 6 + 9, 18 + 6 + 7 + 10)
+
+
+def test_an_incomplete_settings_dict_is_refused():
+    """This used to be asserted as WORKING, which is how the hole survived.
+
+    The CHSH game is defined over all four input pairs, so a run that never
+    presented one has not played it. Pooling it anyway lets a dropped job turn a
+    purely classical device into a certified violation: with only (0,0) present,
+    answering a=b=0 every round wins every round.
+    """
+    for partial in (
+        {(0, 0): {(0, 0): 10}},
+        {(0, 0): {(0, 0): 10}, (1, 1): {(0, 1): 7}},
+        {(0, 0): {(0, 0): 1}, (0, 1): {(0, 0): 1}, (1, 0): {(0, 0): 1}},
+    ):
+        with pytest.raises(ValueError, match="all four input pairs"):
+            wins_from_setting_counts(partial)
+
+
+def test_certification_at_small_n_would_require_impossible_physics():
+    """Documents an OPEN issue rather than asserting a fix, deliberately.
+
+    TSIRELSON_S is defined and exported by this module and guards nothing, so a
+    run reporting S above it is still certified. Refusing that outright is the
+    obviously right thing, but it collides with minos.power: for small n the
+    win count needed to certify implies an S no quantum device can reach, so
+    critical_wins currently advises a threshold that is impossible to meet
+    honestly. Fixing the guard without fixing the planner would leave the tool
+    recommending unreachable run sizes.
+
+    This test pins the arithmetic so the decision is made on numbers rather than
+    from memory. It asserts what IS true today, including the hole.
+    """
+    from minos.power import critical_wins
+
+    impossible_at = [
+        n
+        for n in (11, 40, 100, 400)
+        if omega_to_s(critical_wins(n, alpha=0.05) / n) > TSIRELSON_S
+    ]
+    assert impossible_at == [11, 40], (
+        "certifying at these round counts requires S above the Tsirelson bound; "
+        "if this list changes, minos.power gained (or lost) a physical floor"
+    )
+
+    # and the hole itself: an always-win device is certified today
+    always_win = chsh(wins=2000, rounds=2000, setting_randomness_declared=True)
+    assert always_win.S == 4.0 > TSIRELSON_S
+    assert always_win.certified, (
+        "if this now fails, the Tsirelson guard has been added - good; update "
+        "this test and check minos.power refuses n below the physical floor"
+    )
 
 
 @pytest.mark.parametrize("wins,rounds", [(-1, 10), (11, 10), (5, 0)])
