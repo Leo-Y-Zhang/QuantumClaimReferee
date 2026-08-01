@@ -124,8 +124,17 @@ def test_adversarial_reports_are_bounded_and_complete():
         assert rep.fpr_ceiling_exact == pytest.approx(ceiling)
         # the analyzer bounds every adversary at the exact binomial ceiling
         assert rep.fraction_certified <= ceiling + tol
-        # the three verdict fractions partition the runs
-        total = rep.fraction_certified + rep.fraction_underpowered + rep.fraction_not_certified
+        # The verdict fractions partition the runs. There are FOUR now: a run
+        # whose win rate implies S above the Tsirelson bound is refused as
+        # ASSUMPTIONS_UNMET rather than certified, so it belongs to none of the
+        # original three. Counting it separately is the point - folding it into
+        # fraction_certified would overstate the false-positive rate.
+        total = (
+            rep.fraction_certified
+            + rep.fraction_underpowered
+            + rep.fraction_not_certified
+            + rep.fraction_assumptions_unmet
+        )
         assert total == pytest.approx(1.0)
         assert 0.0 <= rep.fpr_naive_persetting <= 1.0
         assert 0.0 < rep.mean_win_rate < 1.0

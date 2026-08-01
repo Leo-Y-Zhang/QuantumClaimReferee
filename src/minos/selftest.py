@@ -15,9 +15,9 @@ import numpy as np
 from scipy.stats import beta, binom, norm
 
 from .adversary import MemoryLHVAdversary, default_adversaries, play_chsh_game
-from .chsh import CLASSICAL_WIN, chsh
+from .chsh import CLASSICAL_WIN, TSIRELSON_S, chsh
 from .power import certification_power, critical_wins
-from .status import CERTIFIED, NOT_CERTIFIED, UNDERPOWERED
+from .status import ASSUMPTIONS_UNMET, CERTIFIED, NOT_CERTIFIED, UNDERPOWERED
 
 __all__ = [
     "AdversarialReport",
@@ -181,6 +181,14 @@ class AdversarialReport:
     fpr_ceiling_exact: float
     fpr_naive_persetting: float
     mean_win_rate: float
+    # Runs whose win rate implies S above the Tsirelson bound. chsh refuses these
+    # as ASSUMPTIONS_UNMET rather than certifying them, because no quantum device
+    # can produce such a value, so an adversary reaching it has revealed itself
+    # rather than won. Counted separately: folding it into fraction_certified
+    # would overstate the false-positive rate, and folding it into
+    # fraction_not_certified would hide that the adversary was caught by physics
+    # rather than by the p-value.
+    fraction_assumptions_unmet: float = 0.0
 
     def summary(self) -> str:
         mc_sigma = (self.fpr_ceiling_exact * (1.0 - self.fpr_ceiling_exact) / self.trials) ** 0.5
@@ -249,11 +257,17 @@ def chsh_adversarial_false_positive_rates(
     reports: dict[str, AdversarialReport] = {}
     for adversary in battery:
         runs = play_chsh_game(adversary, n, trials, seed=seed)
-        certified = runs.wins >= c
-        not_certified = ~certified & (4 * runs.wins <= 3 * n)  # omega <= 3/4
-        underpowered = ~certified & ~not_certified
+        # Mirror chsh's acceptance region exactly, including the Tsirelson
+        # condition it applies before the p-value. Keeping these in lockstep is
+        # what _spot_check_against_verdict enforces below.
+        unphysical = 8.0 * runs.wins > (TSIRELSON_S + 4.0) * n  # omega > ~0.8536
+        certified = (runs.wins >= c) & ~unphysical
+        not_certified = ~certified & ~unphysical & (4 * runs.wins <= 3 * n)
+        underpowered = ~certified & ~unphysical & ~not_certified
 
-        _spot_check_against_verdict(runs.wins, n, alpha, certified, not_certified)
+        _spot_check_against_verdict(
+            runs.wins, n, alpha, certified, not_certified, unphysical
+        )
 
         p_naive = naive_persetting_pvalues(runs.setting_counts, runs.setting_wins)
         reports[runs.adversary] = AdversarialReport(
@@ -264,6 +278,7 @@ def chsh_adversarial_false_positive_rates(
             fraction_certified=float(np.mean(certified)),
             fraction_underpowered=float(np.mean(underpowered)),
             fraction_not_certified=float(np.mean(not_certified)),
+            fraction_assumptions_unmet=float(np.mean(unphysical)),
             fpr_ceiling_exact=ceiling,
             fpr_naive_persetting=float(np.mean(p_naive <= alpha)),
             mean_win_rate=float(runs.wins.mean()) / n,
@@ -277,6 +292,7 @@ def _spot_check_against_verdict(
     alpha: float,
     certified: np.ndarray,
     not_certified: np.ndarray,
+    unphysical: np.ndarray,
 ) -> None:
     """Re-run a subsample through ``chsh()`` itself: the self-test referees itself."""
     spot = min(64, wins.shape[0])
@@ -284,9 +300,14 @@ def _spot_check_against_verdict(
         status = chsh(
             int(wins[i]), n, alpha=alpha, setting_randomness_declared=True
         ).status
-        expected = (
-            CERTIFIED if certified[i] else (NOT_CERTIFIED if not_certified[i] else UNDERPOWERED)
-        )
+        if unphysical[i]:
+            expected = ASSUMPTIONS_UNMET
+        else:
+            expected = (
+                CERTIFIED
+                if certified[i]
+                else (NOT_CERTIFIED if not_certified[i] else UNDERPOWERED)
+            )
         if status != expected:  # pragma: no cover - would be a real bug
             raise RuntimeError(
                 f"selftest classification drifted from the chsh verdict at wins={int(wins[i])}, "

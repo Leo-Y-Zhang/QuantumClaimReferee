@@ -92,6 +92,9 @@ class CHSHResult:
     alpha: float
     status: str
     assumptions: tuple[str, ...] = field(default_factory=tuple)
+    # Why a default-deny fired, when the reason cannot be read off the other
+    # fields. Empty for every other status.
+    unmet_reason: str = ""
 
     @property
     def certified(self) -> bool:
@@ -106,6 +109,8 @@ class CHSHResult:
             f"  p (naive, observed) : {self.p_naive_observed:.3e}   (for contrast only)\n"
             f"  assumptions         : {', '.join(self.assumptions) or 'none declared'}"
         )
+        if self.unmet_reason:
+            text += f"\n  reason              : {self.unmet_reason}"
         if self.status == UNDERPOWERED:
             text += "\n  rounds for power    : " + self._plan_hint()
         return text
@@ -210,8 +215,23 @@ def chsh(
     if no_signaling:
         assumptions.append("no_signaling")
 
+    unmet_reason = ""
     if not setting_randomness_declared:
         status = ASSUMPTIONS_UNMET
+    elif S > TSIRELSON_S:
+        # No quantum system can exceed the Tsirelson bound, so a value above it
+        # is not a stronger result - it is evidence that the data are not what
+        # they are claimed to be. The usual cause is a setting that never
+        # appeared: with only (0,0) present, a purely classical device answering
+        # a = b = 0 wins every round, giving omega = 1 and S = 4.0, the algebraic
+        # PR-box maximum, at p = 0. TSIRELSON_S was defined and exported here
+        # from the start and guarded nothing.
+        status = ASSUMPTIONS_UNMET
+        unmet_reason = (
+            f"S = {S:.3f} exceeds the Tsirelson bound {TSIRELSON_S:.3f}; no quantum "
+            f"system can do this, so the data are inconsistent with the CHSH game as "
+            f"declared (a missing or non-uniform setting is the usual cause)"
+        )
     elif p_memory_robust <= alpha:
         status = CERTIFIED
     elif omega <= CLASSICAL_WIN:
@@ -233,6 +253,7 @@ def chsh(
         alpha=alpha,
         status=status,
         assumptions=tuple(assumptions),
+        unmet_reason=unmet_reason,
     )
 
 

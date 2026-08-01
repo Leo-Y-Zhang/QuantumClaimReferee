@@ -27,9 +27,16 @@ from dataclasses import dataclass
 
 from scipy.stats import binom
 
-from .chsh import CLASSICAL_WIN, game_tail_pvalue, omega_to_s
+from .chsh import CLASSICAL_WIN, TSIRELSON_S, game_tail_pvalue, omega_to_s
 
-__all__ = ["PlanResult", "certification_power", "critical_wins", "plan_rounds"]
+__all__ = [
+    "PlanResult",
+    "certification_power",
+    "critical_wins",
+    "is_physically_attainable",
+    "minimum_physical_rounds",
+    "plan_rounds",
+]
 
 DEFAULT_MAX_ROUNDS = 1_000_000
 
@@ -60,6 +67,40 @@ def critical_wins(rounds: int, alpha: float) -> int:
     while k <= rounds and game_tail_pvalue(k, rounds) > alpha:
         k += 1
     return k
+
+
+def is_physically_attainable(rounds: int, alpha: float) -> bool:
+    """Can the critical win count at ``rounds`` be reached by a quantum device?
+
+    :func:`critical_wins` answers an arithmetic question and cannot see physics.
+    At small ``n`` its answer implies a CHSH value above the Tsirelson bound,
+    which no quantum system can produce: at ``alpha=0.05``, ``n=11`` demands 11
+    wins out of 11 (``S = 4.000``, the algebraic PR-box maximum) and ``n=40``
+    demands 35 (``S = 3.000``). Those thresholds are not merely demanding, they
+    are unreachable, so planning such a run is advice that cannot be followed
+    honestly.
+    """
+    c = critical_wins(rounds, alpha)
+    if c > rounds:
+        return False
+    return omega_to_s(c / rounds) <= TSIRELSON_S
+
+
+def minimum_physical_rounds(alpha: float, *, max_rounds: int = DEFAULT_MAX_ROUNDS) -> int:
+    """Smallest ``n`` whose certification threshold a quantum device could meet.
+
+    60 at ``alpha=0.05``, 101 at ``0.01``, 169 at ``0.001``. Below this a run
+    cannot certify without reporting a physically impossible value, so
+    :func:`plan_rounds` never proposes one.
+    """
+    _validate_alpha(alpha)
+    for n in range(1, max_rounds + 1):
+        if is_physically_attainable(n, alpha):
+            return n
+    raise ValueError(
+        f"no round count up to {max_rounds} has a physically attainable "
+        f"certification threshold at alpha={alpha}"
+    )
 
 
 def certification_power(rounds: int, win_rate: float, *, alpha: float = 0.05) -> float:
@@ -163,7 +204,9 @@ def plan_rounds(
     for n in range(1, max_rounds + 1):
         if n > 1 and game_tail_pvalue(c, n) > alpha:
             c += 1  # the critical count steps up by exactly one
-        if c <= n:
+        # Skip any n whose threshold implies S above the Tsirelson bound: the
+        # plan would be arithmetically valid and physically impossible to meet.
+        if c <= n and omega_to_s(c / n) <= TSIRELSON_S:
             achieved = float(binom.sf(c - 1, n, win_rate))
             if achieved >= power:
                 return PlanResult(

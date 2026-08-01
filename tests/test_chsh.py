@@ -10,6 +10,7 @@ from minos.chsh import (
     s_to_omega,
     wins_from_setting_counts,
 )
+from minos.status import ASSUMPTIONS_UNMET
 
 
 def test_value_map_local_bound():
@@ -129,39 +130,48 @@ def test_an_incomplete_settings_dict_is_refused():
             wins_from_setting_counts(partial)
 
 
-def test_certification_at_small_n_would_require_impossible_physics():
-    """Documents an OPEN issue rather than asserting a fix, deliberately.
+def test_a_value_above_the_tsirelson_bound_is_never_certified():
+    """S > 2*sqrt(2) is impossible for quantum mechanics, so it is not evidence.
 
-    TSIRELSON_S is defined and exported by this module and guards nothing, so a
-    run reporting S above it is still certified. Refusing that outright is the
-    obviously right thing, but it collides with minos.power: for small n the
-    win count needed to certify implies an S no quantum device can reach, so
-    critical_wins currently advises a threshold that is impossible to meet
-    honestly. Fixing the guard without fixing the planner would leave the tool
-    recommending unreachable run sizes.
-
-    This test pins the arithmetic so the decision is made on numbers rather than
-    from memory. It asserts what IS true today, including the hole.
+    The always-win device reaches S = 4.0, the algebraic PR-box maximum, at p = 0
+    and was CERTIFIED: TSIRELSON_S was defined and exported by this module and
+    guarded nothing. The usual route there is a dropped setting - with only (0,0)
+    present, a purely classical device answering a = b = 0 wins every round.
     """
-    from minos.power import critical_wins
+    impossible = chsh(wins=2000, rounds=2000, setting_randomness_declared=True)
+    assert impossible.S == 4.0 > TSIRELSON_S
+    assert impossible.status == ASSUMPTIONS_UNMET
+    assert not impossible.certified
+    assert "Tsirelson" in impossible.unmet_reason
 
-    impossible_at = [
-        n
-        for n in (11, 40, 100, 400)
-        if omega_to_s(critical_wins(n, alpha=0.05) / n) > TSIRELSON_S
-    ]
-    assert impossible_at == [11, 40], (
-        "certifying at these round counts requires S above the Tsirelson bound; "
-        "if this list changes, minos.power gained (or lost) a physical floor"
+    # A genuine violation AT the bound must still certify - the guard must not
+    # cost real physics.
+    omega = (TSIRELSON_S + 4.0) / 8.0
+    rounds = 200_000
+    genuine = chsh(
+        wins=int(omega * rounds), rounds=rounds, setting_randomness_declared=True
     )
+    assert genuine.S <= TSIRELSON_S
+    assert genuine.certified
 
-    # and the hole itself: an always-win device is certified today
-    always_win = chsh(wins=2000, rounds=2000, setting_randomness_declared=True)
-    assert always_win.S == 4.0 > TSIRELSON_S
-    assert always_win.certified, (
-        "if this now fails, the Tsirelson guard has been added - good; update "
-        "this test and check minos.power refuses n below the physical floor"
-    )
+
+def test_the_planner_no_longer_advises_physically_unreachable_runs():
+    """The guard and minos.power had to move together.
+
+    critical_wins answers an arithmetic question and cannot see physics: at
+    alpha=0.05 it says 11 rounds certify on 11 wins (S = 4.000) and 40 rounds on
+    35 (S = 3.000). Guarding S without giving the planner a floor would have left
+    the tool recommending run sizes no quantum device could satisfy.
+    """
+    from minos.power import is_physically_attainable, minimum_physical_rounds, plan_rounds
+
+    assert not is_physically_attainable(11, 0.05)
+    assert not is_physically_attainable(40, 0.05)
+    assert minimum_physical_rounds(0.05) == 60
+    assert minimum_physical_rounds(0.01) == 101
+
+    plan = plan_rounds(0.83, alpha=0.05, power=0.9)
+    assert omega_to_s(plan.critical_wins / plan.rounds) <= TSIRELSON_S
 
 
 @pytest.mark.parametrize("wins,rounds", [(-1, 10), (11, 10), (5, 0)])

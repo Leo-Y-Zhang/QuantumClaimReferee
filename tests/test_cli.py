@@ -81,7 +81,9 @@ def test_plan_with_win_rate(capsys):
     rc = main(["plan", "--win-rate", "0.9"])
     assert rc == 0
     out = capsys.readouterr().out
-    assert "PLAN: 55 rounds" in out
+    # 55 is below the physical floor of 60 at alpha=0.05 (certifying there
+    # would need a win count implying S above the Tsirelson bound).
+    assert "PLAN: 60 rounds" in out
 
 
 def test_plan_requires_exactly_one_of_s_and_win_rate():

@@ -278,14 +278,21 @@ def test_sacrifice_adversaries_match_the_binomial_exactly():
 def test_verdicts_on_adversarial_runs_match_the_shipped_chsh_machinery():
     # For every distinct win count an adversary actually produced, the shipped
     # chsh() verdict must equal the classification the self-test uses:
-    # CERTIFIED iff wins >= c_alpha(n); else NOT_CERTIFIED iff omega <= 3/4;
-    # else UNDERPOWERED.
+    # ASSUMPTIONS_UNMET iff the win rate implies S above the Tsirelson bound
+    # (checked FIRST, as chsh checks it first); else CERTIFIED iff
+    # wins >= c_alpha(n); else NOT_CERTIFIED iff omega <= 3/4; else UNDERPOWERED.
+    from minos.chsh import TSIRELSON_S, omega_to_s
+    from minos.status import ASSUMPTIONS_UNMET
+
     n = 40
     c = critical_wins(n, 0.05)
     runs = play_chsh_game(GreedyDenominatorAdversary(), n, 250, seed=4)
     for w in np.unique(runs.wins):
         w = int(w)
-        expected = CERTIFIED if w >= c else (NOT_CERTIFIED if 4 * w <= 3 * n else UNDERPOWERED)
+        if omega_to_s(w / n) > TSIRELSON_S:
+            expected = ASSUMPTIONS_UNMET
+        else:
+            expected = CERTIFIED if w >= c else (NOT_CERTIFIED if 4 * w <= 3 * n else UNDERPOWERED)
         r = chsh(w, n, alpha=0.05, setting_randomness_declared=True)
         assert r.status == expected, f"wins={w}"
 
