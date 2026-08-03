@@ -31,6 +31,35 @@ agrees and this tool adds nothing at all.
 That boundary is stated in the README rather than hidden, and it is the reason
 the scope below is as small as it is.
 
+## Where the project said no
+
+**Repurposing the finance overfitting tool** — deflated Sharpe, PBO, purged
+walk-forward — at quantum data. Rejected after reading: the machinery does not
+transfer, because quantum data has a *known* Born-rule null and i.i.d.
+resampleable shots, which is exactly what the finance methods exist to work
+around. What transferred was the ethos, not a line of code. `NOTES.md` is the
+long version.
+
+**"Solving" decoherence or interference.** Incoherent as a goal: interference is
+the resource rather than the defect, and the unwanted effects are hardware and
+error-correction problems, not statistics problems.
+
+**Bootstrap or Wald intervals.** Wald overshoots [0, 1] and collapses to zero
+width as the proportion approaches 1 — precisely the near-pure-state regime this
+tool is used in.
+
+**Azuma–Hoeffding as the headline p-value.** Implemented and reported, but not
+the criterion: it is valid and much looser (4.066e-01 against 7.399e-02 on the
+worked example). Kept visible so the conservatism of the choice is auditable.
+
+**Bisection over *n* in the power analysis.** Exact binomial power is non-monotone
+in *n* — a sawtooth — so bisection can land in a dip and return a wrong answer. A
+linear scan is slower and correct.
+
+**Publishing to PyPI.** The licence is proprietary, source-available, portfolio
+viewing only, and an unmaintained statistics package that people might cite is
+worse than no package.
+
 ## Requirements
 
 **Must**
@@ -138,35 +167,6 @@ There is no access control and none is needed — a local library and CLI with n
 server, no database and no shared state, so nothing can be revoked. If this ever
 grows a hosted surface, that answer changes and this paragraph has to be
 rewritten before it ships.
-
-## Where the project said no
-
-**Repurposing the finance overfitting tool** — deflated Sharpe, PBO, purged
-walk-forward — at quantum data. Rejected after reading: the machinery does not
-transfer, because quantum data has a *known* Born-rule null and i.i.d.
-resampleable shots, which is exactly what the finance methods exist to work
-around. What transferred was the ethos, not a line of code. `NOTES.md` is the
-long version.
-
-**"Solving" decoherence or interference.** Incoherent as a goal: interference is
-the resource rather than the defect, and the unwanted effects are hardware and
-error-correction problems, not statistics problems.
-
-**Bootstrap or Wald intervals.** Wald overshoots [0, 1] and collapses to zero
-width as the proportion approaches 1 — precisely the near-pure-state regime this
-tool is used in.
-
-**Azuma–Hoeffding as the headline p-value.** Implemented and reported, but not
-the criterion: it is valid and much looser (4.066e-01 against 7.399e-02 on the
-worked example). Kept visible so the conservatism of the choice is auditable.
-
-**Bisection over *n* in the power analysis.** Exact binomial power is non-monotone
-in *n* — a sawtooth — so bisection can land in a dip and return a wrong answer. A
-linear scan is slower and correct.
-
-**Publishing to PyPI.** The licence is proprietary, source-available, portfolio
-viewing only, and an unmaintained statistics package that people might cite is
-worse than no package.
 
 ## What would change v2
 

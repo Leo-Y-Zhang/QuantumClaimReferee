@@ -3,7 +3,7 @@
 Derived from the code at `src/qcref/`, not from the README.
 Requirements: [PRD.md](PRD.md).
 
-## One criterion, enforced structurally
+## A library of pure functions, with a shim on top
 
 A pure-Python library with a thin CLI over it. No server, no database, no
 persistence, no network: every entry point is a function from integers to a
