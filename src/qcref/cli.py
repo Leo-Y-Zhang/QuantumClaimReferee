@@ -1,6 +1,6 @@
-"""``minos`` command-line interface.
+"""``qcref`` command-line interface.
 
-Exit code 0 means CERTIFIED, non-zero means anything else -- so minos drops into a
+Exit code 0 means CERTIFIED, non-zero means anything else -- so qcref drops into a
 CI gate or a research pipeline exactly like a test runner.
 """
 
@@ -78,7 +78,7 @@ def _selftest_adversarial(n: int, trials: int) -> int:
         print(report.summary())
         print()
     print(
-        "note: more rounds cannot rescue a true LHV source -- minos plan refuses\n"
+        "note: more rounds cannot rescue a true LHV source -- qcref plan refuses\n"
         "      win rates at or below 3/4 (the certify probability never exceeds\n"
         "      alpha there), and UNDERPOWERED verdicts on such data price a\n"
         "      follow-up that will again fail with probability >= 1 - alpha."
@@ -119,8 +119,8 @@ def _cmd_demo(_args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="minos", description=__doc__)
-    parser.add_argument("--version", action="version", version=f"minos {__version__}")
+    parser = argparse.ArgumentParser(prog="qcref", description=__doc__)
+    parser.add_argument("--version", action="version", version=f"qcref {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     p_chsh = sub.add_parser("chsh", help="certify a CHSH violation from wins/rounds")

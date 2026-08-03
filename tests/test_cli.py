@@ -1,6 +1,6 @@
 import pytest
 
-from minos.cli import main
+from qcref.cli import main
 
 
 def test_chsh_certified_exit_zero(capsys):
@@ -46,7 +46,7 @@ def test_selftest_adversarial_runs(capsys):
     ):
         assert name in out
     # the plan-machinery tie-in is stated
-    assert "minos plan" in out
+    assert "qcref plan" in out
 
 
 def test_selftest_adversarial_default_trials_is_scaled_down(capsys):

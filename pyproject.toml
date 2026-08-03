@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "minos"
+name = "quantum-claim-referee"
 version = "0.3.0"
 description = "An honest, finite-sample statistical referee for quantum measurement claims."
 readme = "README.md"
@@ -16,7 +16,7 @@ dependencies = ["numpy>=1.24", "scipy>=1.10"]
 dev = ["pytest>=7", "ruff>=0.6"]
 
 [project.scripts]
-minos = "minos.cli:main"
+qcref = "qcref.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

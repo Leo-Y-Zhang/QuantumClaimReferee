@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from minos.chsh import (
+from qcref.chsh import (
     TSIRELSON_S,
     chsh,
     game_tail_pvalue,
@@ -10,7 +10,7 @@ from minos.chsh import (
     s_to_omega,
     wins_from_setting_counts,
 )
-from minos.status import ASSUMPTIONS_UNMET
+from qcref.status import ASSUMPTIONS_UNMET
 
 
 def test_value_map_local_bound():
@@ -156,14 +156,14 @@ def test_a_value_above_the_tsirelson_bound_is_never_certified():
 
 
 def test_the_planner_no_longer_advises_physically_unreachable_runs():
-    """The guard and minos.power had to move together.
+    """The guard and qcref.power had to move together.
 
     critical_wins answers an arithmetic question and cannot see physics: at
     alpha=0.05 it says 11 rounds certify on 11 wins (S = 4.000) and 40 rounds on
     35 (S = 3.000). Guarding S without giving the planner a floor would have left
     the tool recommending run sizes no quantum device could satisfy.
     """
-    from minos.power import is_physically_attainable, minimum_physical_rounds, plan_rounds
+    from qcref.power import is_physically_attainable, minimum_physical_rounds, plan_rounds
 
     assert not is_physically_attainable(11, 0.05)
     assert not is_physically_attainable(40, 0.05)

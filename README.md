@@ -1,12 +1,12 @@
-# Minos - an honest, finite-sample statistical referee for quantum measurement claims
+# Quantum Claim Referee - an honest, finite-sample statistical referee for quantum measurement claims
 
-[![CI](https://github.com/GreenPandaTech/Minos/actions/workflows/ci.yml/badge.svg)](https://github.com/GreenPandaTech/Minos/actions/workflows/ci.yml)
+[![CI](https://github.com/GreenPandaTech/QuantumClaimReferee/actions/workflows/ci.yml/badge.svg)](https://github.com/GreenPandaTech/QuantumClaimReferee/actions/workflows/ci.yml)
 
-Point `minos` at raw measurement counts and get a *default-deny* verdict on whether
+Point `qcref` at raw measurement counts and get a *default-deny* verdict on whether
 a fidelity or entanglement/CHSH claim actually survives finite-sample scrutiny — with a
 reproducible referee's report you can attach to a paper or an internal review. The
 non-obvious part: the field's usual "*S* beats 2 by *k* sigma" test is *miscalibrated*
-at realistic shot counts (it certifies violations that are not there), so `minos` uses a
+at realistic shot counts (it certifies violations that are not there), so `qcref` uses a
 finite-sample game bound that stays valid even under the memory loophole — and ships a
 coverage self-test that proves the gap.
 
@@ -22,7 +22,7 @@ this provides — is:
 
 1. **Valid finite-sample CHSH / Bell p-values** that replace the field's common
    "S exceeds 2 by *k* sigma" habit. That habit is not merely loose — it is
-   *miscalibrated*: it certifies violations that are not there. minos uses the
+   *miscalibrated*: it certifies violations that are not there. `qcref` uses the
    game-based bound that is valid even under the **memory loophole**
    (Gill / Bierhorst / Elkouss–Wehner).
 2. A **meta-statistical referee discipline** — multiple-comparison correction,
@@ -33,11 +33,11 @@ this provides — is:
 ## The wedge, in one run
 
 ```bash
-minos selftest --n 80          # naive CHSH false-positive rate ~0.074 vs nominal 0.05
-minos selftest --n 8000        # at high statistics the gap vanishes
-minos selftest --adversarial   # referee history-dependent memory-LHV adversaries
-minos demo                     # the scarce-vs-plentiful worked example + a best-of-6 scan
-minos plan --S 2.4 --alpha 0.05 --power 0.9   # exact power analysis: 604 rounds needed
+qcref selftest --n 80          # naive CHSH false-positive rate ~0.074 vs nominal 0.05
+qcref selftest --n 8000        # at high statistics the gap vanishes
+qcref selftest --adversarial   # referee history-dependent memory-LHV adversaries
+qcref demo                     # the scarce-vs-plentiful worked example + a best-of-6 scan
+qcref plan --S 2.4 --alpha 0.05 --power 0.9   # exact power analysis: 604 rounds needed
 ```
 
 At `n = 80` the naive observed-SE test **certifies** data the rigorous game tail calls
@@ -63,12 +63,14 @@ CHSH: S = 2.600  2.6000  [1.8194, 3.1423]  (95% wilson->S, n=80)
 python -m pip install -e .
 ```
 
-Dependencies are limited to `numpy` and `scipy`. No network access is ever performed.
+The distribution is `quantum-claim-referee`; the import name and the command are both
+`qcref`. Dependencies are limited to `numpy` and `scipy`. No network access is ever
+performed.
 
 ## Library usage
 
 ```python
-import minos as qr
+import qcref as qr
 
 # CHSH from game wins/rounds (settings must be declared randomised, or it default-denies)
 r = qr.chsh(6400, 8000, setting_randomness_declared=True)
@@ -89,9 +91,9 @@ plan = qr.plan_rounds(qr.s_to_omega(2.4), alpha=0.05, power=0.9)
 print(plan.summary())        # -> 604 rounds, certify iff wins >= 471, exact power 0.9007
 ```
 
-## Planning an experiment: `minos plan`
+## Planning an experiment: `qcref plan`
 
-Before running rounds, ask how many you need: `minos plan --S 2.4 --alpha 0.05
+Before running rounds, ask how many you need: `qcref plan --S 2.4 --alpha 0.05
 --power 0.9` (or `--win-rate 0.8`) returns the **minimal** `n` such that the shipped
 certification — the same game-tail criterion `chsh` decides on, reused, not
 reimplemented — succeeds with probability ≥ the target when the per-round win rate
@@ -99,7 +101,7 @@ truly is the hypothesised one. Everything is exact Binomial; no Gaussian
 approximation is used anywhere.
 
 ```text
-$ minos plan --S 2.4 --alpha 0.05 --power 0.9
+$ qcref plan --S 2.4 --alpha 0.05 --power 0.9
 PLAN: 604 rounds  (hypothesis: win rate 0.8000, S = 2.400)
   certify iff wins >=  : 471  (alpha=0.05)
   exact power          : 0.9007  (target 0.9)
@@ -110,15 +112,15 @@ PLAN: 604 rounds  (hypothesis: win rate 0.8000, S = 2.400)
 
 The non-obvious part: exact binomial power is **non-monotone in `n`** (a sawtooth —
 each time the integer critical win count steps up, the power momentarily drops), so
-a bisection over `n` is invalid. `minos` scans and returns the first `n` meeting the
+a bisection over `n` is invalid. `qcref` scans and returns the first `n` meeting the
 target; by the same sawtooth, some larger `n` can dip below the target again, and the
 output says so. An `UNDERPOWERED` verdict now also carries a planning hint: roughly
 how many rounds 90% power would take **if** the observed win rate persists — labelled
 as the assumption it is, since the observed rate is an estimate, not the truth.
 
-## The memory loophole, attacked for real: `minos selftest --adversarial`
+## The memory loophole, attacked for real: `qcref selftest --adversarial`
 
-Claiming memory-robustness is cheap; `minos` attacks itself to earn it. The
+Claiming memory-robustness is cheap; `qcref` attacks itself to earn it. The
 adversarial self-test plays full sequential CHSH games against history-dependent
 local players — each round the adversary picks one of the 16 deterministic local
 strategies as *any* function of all past settings, past outcomes, and private
@@ -135,10 +137,10 @@ test to a **0.2953 false-positive rate at n = 80** against a nominal 0.05, and
 more data does not fix it (0.2873 at n = 320, 0.2555 at n = 1000, 0.2675 at
 n = 4000). The memory-robust game tail stays within Monte-Carlo noise of the
 exact ceiling `P[Bin(n, 3/4) ≥ c_α(n)]` against every adversary — the same
-exact-binomial quantity `minos plan` is built on. Excerpt at `n = 80`:
+exact-binomial quantity `qcref plan` is built on. Excerpt at `n = 80`:
 
 ```text
-$ minos selftest --adversarial --n 80
+$ qcref selftest --adversarial --n 80
 Adversarial memory-loophole self-test: n=80 rounds, 2000 runs per adversary (alpha=0.05)
   exact ceiling for ANY memory-LHV adversary: P[Bin(80, 3/4) >= 67] = 0.0421
 
@@ -153,7 +155,7 @@ The non-obvious part: memory moves *per-setting* statistics, never the pooled
 win count — any history-measurable choice of sacrificed setting keeps the
 conditional win probability at exactly 3/4, so the suite checks that
 sacrifice-class adversaries *match* `Binomial(n, 3/4)` in pooled wins, not
-merely stay below it. That is precisely why `minos` certifies from pooled wins.
+merely stay below it. That is precisely why `qcref` certifies from pooled wins.
 Optional stopping (choosing `n` adaptively) is a different loophole and is
 documented as out of scope.
 
@@ -190,14 +192,14 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 | Memory-robust CHSH p-values | game tail `P[Bin(n, 3/4) ≥ wins]` (Gill martingale / stochastic dominance; Bierhorst). Elkouss–Wehner (npj QI 2016) is a tighter near-optimal refinement, *not implemented* |
 | Conservative CHSH bound | Azuma–Hoeffding |
 | Multiple comparisons | Holm (1979); Benjamini–Hochberg (1995); Bonferroni |
-| Power analysis (`minos plan`) | exact Binomial power against the same game-tail critical count the verdict uses; sawtooth-aware minimal-`n` scan (no Gaussian shortcut) |
-| Coverage validation | Monte-Carlo empirical-coverage harness (in `minos.selftest`) |
-| Adversarial validation | history-dependent memory-LHV adversaries (Barrett et al., PRA 66 042111; Gill quant-ph/0301059) refereed against the exact ceiling `P[Bin(n, 3/4) ≥ c_α]` (in `minos.adversary`) |
+| Power analysis (`qcref plan`) | exact Binomial power against the same game-tail critical count the verdict uses; sawtooth-aware minimal-`n` scan (no Gaussian shortcut) |
+| Coverage validation | Monte-Carlo empirical-coverage harness (in `qcref.selftest`) |
+| Adversarial validation | history-dependent memory-LHV adversaries (Barrett et al., PRA 66 042111; Gill quant-ph/0301059) refereed against the exact ceiling `P[Bin(n, 3/4) ≥ c_α]` (in `qcref.adversary`) |
 
 ## Tests
 
 ```bash
-python -m pytest        # 142 tests
+python -m pytest        # 145 tests
 ```
 
 The suite covers CHSH certification and its guardrails, both interval methods, the
@@ -212,6 +214,16 @@ proving that an adversary that clones its RNG to peek at upcoming settings
 gains nothing and that one that tries to write the referee's score ledger
 raises instead of certifying).
 Requires Python 3.11+; CI runs on Python 3.13.
+
+## Design documents
+
+Written after the fact, from the code rather than from this README:
+[PRD](docs/PRD.md) (why it exists, and what is deliberately out of scope) ·
+[TDD](docs/TDD.md) (module structure, contracts, failure modes) ·
+[App Flow](docs/APP_FLOW.md) (the four commands, their states, and the exit-code
+contract) · [Design Brief](docs/DESIGN_BRIEF.md) (the report and terminal output).
+[NOTES.md](NOTES.md) is the honest origin story, including why the original idea
+was killed.
 
 ## License
 

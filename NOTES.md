@@ -1,4 +1,4 @@
-# How minos came to be (an honest origin story)
+# How Quantum Claim Referee came to be (an honest origin story)
 
 This project exists because I tried to talk myself *out* of a bad idea and found a
 good one underneath it.
@@ -57,7 +57,7 @@ while the rigorous game tail sits at ~4%. At n = 8000 the gap vanishes. So the t
 real, honest value is the **low-shot / multiple-comparison** regime, and the README
 says exactly that rather than overselling.
 
-That simulation is not a slide; it ships as `minos.selftest` and runs in CI. A
+That simulation is not a slide; it ships as `qcref.selftest` and runs in CI. A
 referee that can't referee itself has no business refereeing anyone else.
 
 ## Scope discipline (the hardest, most important design choice)

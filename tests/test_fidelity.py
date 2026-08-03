@@ -1,7 +1,7 @@
 import pytest
 
-from minos.counts import CountsDataset
-from minos.fidelity import fidelity_to_basis_state, probability_interval
+from qcref.counts import CountsDataset
+from qcref.fidelity import fidelity_to_basis_state, probability_interval
 
 
 def _dataset():

@@ -3,7 +3,7 @@
 A referee tool must referee itself. These Monte-Carlo checks are the point of the
 whole package: they demonstrate empirically that the recommended estimators are
 calibrated (coverage >= nominal; false-positive rate <= alpha), and that the naive
-practice minos replaces is *miscalibrated* -- it certifies violations that are not
+practice qcref replaces is *miscalibrated* -- it certifies violations that are not
 there. Formulas are cheap; validated coverage is what earns trust.
 """
 
@@ -125,7 +125,7 @@ def naive_persetting_pvalues(
     ----------
     setting_counts, setting_wins:
         Integer arrays of shape ``(trials, 4)``: rounds seen and rounds won per
-        setting pair, e.g. from :class:`minos.adversary.AdversaryRuns`.
+        setting pair, e.g. from :class:`qcref.adversary.AdversaryRuns`.
     """
     counts = np.asarray(setting_counts, dtype=float)
     wins = np.asarray(setting_wins, dtype=float)
@@ -166,7 +166,7 @@ class AdversarialReport:
     ``fraction_certified`` is the memory-robust false-positive rate (every
     certification of an LHV adversary is false); it must sit at or below
     ``fpr_ceiling_exact``, the exact binomial ceiling
-    ``P[Bin(rounds, 3/4) >= c_alpha]`` computed by the :mod:`minos.power`
+    ``P[Bin(rounds, 3/4) >= c_alpha]`` computed by the :mod:`qcref.power`
     machinery. ``fpr_naive_persetting`` is the same data pushed through the naive
     per-setting sigma test (:func:`naive_persetting_pvalues`), for contrast.
     """
@@ -221,21 +221,21 @@ def chsh_adversarial_false_positive_rates(
 ) -> dict[str, AdversarialReport]:
     """Referee a battery of memory-LHV adversaries and score every verdict.
 
-    For each adversary in :func:`minos.adversary.default_adversaries` (or the
+    For each adversary in :func:`qcref.adversary.default_adversaries` (or the
     supplied ones), plays ``trials`` independent ``n``-round CHSH games in which
     outcomes may depend on all past settings and outcomes, then classifies every
     run with the shipped verdict machinery:
 
     * ``CERTIFIED`` runs are false positives; their rate must not exceed the
       exact ceiling ``P[Bin(n, 3/4) >= c_alpha(n)]`` -- the same exact-binomial
-      quantity ``minos plan`` is built on (:func:`minos.power.certification_power`
+      quantity ``qcref plan`` is built on (:func:`qcref.power.certification_power`
       at the classical bound), valid against *every* memory adversary by
       stochastic dominance.
     * The remaining runs must be flagged ``UNDERPOWERED`` (point estimate above
       3/4 but evidence below ``alpha``) or ``NOT_CERTIFIED``.
 
-    The classification uses :func:`minos.power.critical_wins` -- the exact
-    acceptance region of :func:`minos.chsh.chsh` -- and a subsample of every
+    The classification uses :func:`qcref.power.critical_wins` -- the exact
+    acceptance region of :func:`qcref.chsh.chsh` -- and a subsample of every
     batch is re-checked against ``chsh()`` itself; any disagreement raises,
     so the self-test cannot silently drift from the verdict machinery.
     """

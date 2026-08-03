@@ -1,6 +1,6 @@
 import pytest
 
-from minos.intervals import clopper_pearson_interval, wilson_interval
+from qcref.intervals import clopper_pearson_interval, wilson_interval
 
 
 def test_wilson_known_values():

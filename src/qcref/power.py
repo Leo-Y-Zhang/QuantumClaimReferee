@@ -1,12 +1,12 @@
-"""Exact finite-sample power analysis for the CHSH certification: ``minos plan``.
+"""Exact finite-sample power analysis for the CHSH certification: ``qcref plan``.
 
 Answers the design question *before* the experiment: given a hypothesised per-round
 win probability (or CHSH ``S`` value), how many rounds are needed so that the shipped
 certification -- the game-tail criterion ``P[Bin(n, 3/4) >= wins] <= alpha`` of
-:func:`minos.chsh.chsh` -- succeeds with at least the target probability?
+:func:`qcref.chsh.chsh` -- succeeds with at least the target probability?
 
 Everything here is exact Binomial; there is no Gaussian shortcut anywhere. The
-threshold is *derived from* :func:`minos.chsh.game_tail_pvalue`, the very function the
+threshold is *derived from* :func:`qcref.chsh.game_tail_pvalue`, the very function the
 verdict logic uses, so the plan and the verdict can never disagree.
 
 The subtlety that justifies the module: exact binomial power is **non-monotone in n**
@@ -50,7 +50,7 @@ def critical_wins(rounds: int, alpha: float) -> int:
     """The critical win count ``c_alpha(n)``: the smallest ``wins`` that certifies.
 
     That is, the smallest ``k`` with ``game_tail_pvalue(k, rounds) <= alpha`` -- the
-    exact acceptance region of :func:`minos.chsh.chsh`. Returns ``rounds + 1`` when
+    exact acceptance region of :func:`qcref.chsh.chsh`. Returns ``rounds + 1`` when
     even winning every round does not certify (``0.75**rounds > alpha``), i.e. the
     certification is unattainable at this ``n``.
     """
@@ -161,7 +161,7 @@ def plan_rounds(
         Hypothesised per-round win probability, strictly above the classical bound
         ``3/4`` (at or below it the certification is calibrated, so its success
         probability never exceeds ``alpha`` and no target power is reachable).
-        Convert a CHSH value via :func:`minos.chsh.s_to_omega`.
+        Convert a CHSH value via :func:`qcref.chsh.s_to_omega`.
     alpha:
         Significance threshold of the certification being planned for.
     power:

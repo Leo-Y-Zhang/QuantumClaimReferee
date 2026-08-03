@@ -5,7 +5,7 @@ in a real Bell test the rounds are sequential, and a classical device can condit
 round ``i`` on everything that happened in rounds ``1 .. i-1`` -- past settings and
 past outcomes are public after each round. Analyses that assume i.i.d. rounds are
 therefore attackable in principle. This module implements such adversaries so that
-:mod:`minos.selftest` can *demonstrate*, not just cite, that the shipped game-tail
+:mod:`qcref.selftest` can *demonstrate*, not just cite, that the shipped game-tail
 certification bounds every one of them.
 
 The model is the fully general deterministic-per-round memory-LHV adversary:
@@ -47,7 +47,7 @@ RNG. Three structural enforcement points make the model honest, and all matter:
 Together these give every adversary representable here conditional win
 probability at most ``3/4`` given any history, so the total win count is
 stochastically dominated by ``Binomial(n, 3/4)`` and
-:func:`minos.chsh.game_tail_pvalue` remains a valid p-value against all of them
+:func:`qcref.chsh.game_tail_pvalue` remains a valid p-value against all of them
 (Gill, quant-ph/0301059). The self-test checks that empirically rather than
 trusting the theorem.
 
@@ -55,10 +55,10 @@ A sharper consequence worth knowing: an adversary whose only freedom is *which*
 setting pair to sacrifice (playing a best 3-of-4 strategy every round) has
 conditional win probability *exactly* ``3/4`` whatever it remembers, so its pooled
 win count is exactly ``Binomial(n, 3/4)`` in distribution. Memory moves
-*per-setting* statistics, never the pooled wins -- which is precisely why minos
+*per-setting* statistics, never the pooled wins -- which is precisely why qcref
 certifies from pooled wins. What memory *can* skew is the field's naive per-setting
 correlator estimator ``S_hat = E00 + E01 + E10 - E11`` with its four random
-denominators; see :func:`minos.selftest.naive_persetting_pvalues` and
+denominators; see :func:`qcref.selftest.naive_persetting_pvalues` and
 :class:`GreedyDenominatorAdversary`.
 
 Scope note: adversaries here control outcomes given settings, not the number of

@@ -5,9 +5,9 @@ Fully offline. Run:  python examples/run_example.py
 
 from __future__ import annotations
 
-from minos import chsh, plan_rounds, referee_report, s_to_omega
-from minos.selftest import chsh_null_false_positive_rates
-from minos.verdict import Study
+from qcref import chsh, plan_rounds, referee_report, s_to_omega
+from qcref.selftest import chsh_null_false_positive_rates
+from qcref.verdict import Study
 
 
 def main() -> None:

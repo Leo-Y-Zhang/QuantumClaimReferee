@@ -1,8 +1,8 @@
 """CHSH / Bell-inequality certification with *valid* finite-sample p-values.
 
-The flagship of minos. The routine practice of "S exceeds 2 by many sigma"
+The flagship of qcref. The routine practice of "S exceeds 2 by many sigma"
 (a Gaussian on the CHSH value using the observed variance) is not merely loose --
-it is miscalibrated: it certifies data it should not (see :mod:`minos.selftest`).
+it is miscalibrated: it certifies data it should not (see :mod:`qcref.selftest`).
 
 We work in the CHSH *game* picture, which makes a rigorous p-value elementary:
 
@@ -66,7 +66,7 @@ def game_tail_pvalue(wins: int, rounds: int) -> float:
     """The memory-robust p-value ``P[Binomial(rounds, 3/4) >= wins]``.
 
     This is *the* certification criterion: :func:`chsh` certifies exactly when this
-    tail is ``<= alpha``. It is exposed so other modules (e.g. :mod:`minos.power`)
+    tail is ``<= alpha``. It is exposed so other modules (e.g. :mod:`qcref.power`)
     reuse the identical threshold rather than reimplementing a parallel one.
     """
     return float(binom.sf(wins - 1, rounds, CLASSICAL_WIN))
@@ -120,7 +120,7 @@ class CHSHResult:
 
         Honest labelling: the hint assumes the observed win rate persists (it is an
         estimate, not the truth) and states the assumed power explicitly. Exact
-        binomial power analysis, same threshold as the verdict (:mod:`minos.power`).
+        binomial power analysis, same threshold as the verdict (:mod:`qcref.power`).
         """
         from .power import plan_rounds  # local import: power imports this module
 

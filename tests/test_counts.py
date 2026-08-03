@@ -1,6 +1,6 @@
 import pytest
 
-from minos.counts import CountsDataset
+from qcref.counts import CountsDataset
 
 
 def test_from_counts_and_probability():

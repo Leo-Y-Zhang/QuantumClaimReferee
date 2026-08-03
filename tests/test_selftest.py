@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 from scipy.stats import norm
 
-from minos.adversary import GreedyDenominatorAdversary, default_adversaries
-from minos.power import certification_power
-from minos.selftest import (
+from qcref.adversary import GreedyDenominatorAdversary, default_adversaries
+from qcref.power import certification_power
+from qcref.selftest import (
     AdversarialReport,
     binomial_interval_coverage,
     chsh_adversarial_false_positive_rates,

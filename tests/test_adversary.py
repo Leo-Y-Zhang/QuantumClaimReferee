@@ -5,7 +5,7 @@ import math
 import numpy as np
 import pytest
 
-from minos.adversary import (
+from qcref.adversary import (
     SACRIFICE_TO_STRATEGY,
     STRATEGY_WIN_TABLE,
     FixedSacrificeAdversary,
@@ -17,9 +17,9 @@ from minos.adversary import (
     default_adversaries,
     play_chsh_game,
 )
-from minos.chsh import CLASSICAL_WIN, chsh
-from minos.power import certification_power, critical_wins
-from minos.status import CERTIFIED, NOT_CERTIFIED, UNDERPOWERED
+from qcref.chsh import CLASSICAL_WIN, chsh
+from qcref.power import certification_power, critical_wins
+from qcref.status import CERTIFIED, NOT_CERTIFIED, UNDERPOWERED
 
 # ------------------------------------------------------------- strategy table
 
@@ -235,7 +235,7 @@ def test_no_adversary_exceeds_the_exact_binomial_ceiling():
     # THE point of the adversarial self-test: for ANY memory-LHV adversary the
     # certification (false-positive) rate is capped by the exact binomial tail
     # P[Bin(n, 3/4) >= c_alpha(n)] -- computed by the same power machinery that
-    # minos plan uses -- because total wins are stochastically dominated by
+    # qcref plan uses -- because total wins are stochastically dominated by
     # Binomial(n, 3/4) even when outcomes depend on past settings and outcomes.
     n, trials, alpha = 80, 4000, 0.05
     c = critical_wins(n, alpha)
@@ -253,7 +253,7 @@ def test_sacrifice_adversaries_match_the_binomial_exactly():
     # win probability at exactly 3/4, so total wins are Binomial(n, 3/4) in
     # distribution: the mean and the certification tail must MATCH the exact
     # values, not merely stay below them. Memory moves per-setting statistics,
-    # never the pooled win count -- which is exactly why minos certifies from
+    # never the pooled win count -- which is exactly why qcref certifies from
     # pooled wins.
     n, trials, alpha = 80, 4000, 0.05
     c = critical_wins(n, alpha)
@@ -281,8 +281,8 @@ def test_verdicts_on_adversarial_runs_match_the_shipped_chsh_machinery():
     # ASSUMPTIONS_UNMET iff the win rate implies S above the Tsirelson bound
     # (checked FIRST, as chsh checks it first); else CERTIFIED iff
     # wins >= c_alpha(n); else NOT_CERTIFIED iff omega <= 3/4; else UNDERPOWERED.
-    from minos.chsh import TSIRELSON_S, omega_to_s
-    from minos.status import ASSUMPTIONS_UNMET
+    from qcref.chsh import TSIRELSON_S, omega_to_s
+    from qcref.status import ASSUMPTIONS_UNMET
 
     n = 40
     c = critical_wins(n, 0.05)
@@ -299,7 +299,7 @@ def test_verdicts_on_adversarial_runs_match_the_shipped_chsh_machinery():
 
 def test_underpowered_adversarial_run_carries_the_plan_hint():
     # An adversary at the bound lands UNDERPOWERED about half the time; those
-    # verdicts must carry the minos plan hint (exact-binomial rounds-for-power),
+    # verdicts must carry the qcref plan hint (exact-binomial rounds-for-power),
     # exactly as on real data.
     n = 80
     c = critical_wins(n, 0.05)

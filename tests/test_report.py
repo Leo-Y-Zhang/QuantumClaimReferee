@@ -1,6 +1,6 @@
-from minos import __version__
-from minos.report import referee_report
-from minos.verdict import Study
+from qcref import __version__
+from qcref.report import referee_report
+from qcref.verdict import Study
 
 
 def _verdict():

@@ -4,6 +4,24 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/), and this project adheres to
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+- Renamed the project from **Minos** to **Quantum Claim Referee**. The import
+  name and the console command are now `qcref` (was `minos`), and the
+  distribution is `quantum-claim-referee` (was `minos`). No behaviour changed:
+  every public name below `qcref.*` keeps its signature and semantics, and the
+  full suite passes unchanged. Existing installs need one
+  `pip install -e .` after `pip uninstall minos`.
+- The entries below were written under the old name and are left as published:
+  read `minos.x` as `qcref.x` and `minos <cmd>` as `qcref <cmd>` throughout.
+
+### Added
+- Design documents under `docs/`: PRD, TDD, an App Flow covering the CLI and its
+  exit-code contract, and a design brief for the report and terminal output. They
+  are retrospective - the code came first - and are written from the code rather
+  than from the README.
+
 ## [0.3.0] - 2026-07-31
 
 ### Added

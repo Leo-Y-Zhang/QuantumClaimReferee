@@ -3,8 +3,8 @@ import math
 import numpy as np
 import pytest
 
-from minos.chsh import chsh, s_to_omega
-from minos.power import PlanResult, certification_power, critical_wins, plan_rounds
+from qcref.chsh import chsh, s_to_omega
+from qcref.power import PlanResult, certification_power, critical_wins, plan_rounds
 
 
 def _exact_upper_tail(k: int, n: int, p: float) -> float:
@@ -53,7 +53,7 @@ def test_critical_wins_agrees_with_shipped_verdict(n):
     # because no quantum device can produce one -- so critical_wins alone stopped
     # being the whole story. It answers an arithmetic question and cannot see
     # physics; that is why it is not the sole gate.
-    from minos.chsh import TSIRELSON_S, omega_to_s
+    from qcref.chsh import TSIRELSON_S, omega_to_s
 
     c = critical_wins(n, 0.05)
     for wins in range(n + 1):
@@ -116,7 +116,7 @@ def test_plan_rounds_is_minimal_against_independent_computation():
     # Verify minimality exhaustively with the independent no-scipy computation.
     # Minimal now means minimal among the PHYSICALLY ATTAINABLE n, so smaller n
     # are excluded by the Tsirelson condition rather than by insufficient power.
-    from minos.chsh import TSIRELSON_S, omega_to_s
+    from qcref.chsh import TSIRELSON_S, omega_to_s
 
     plan = plan_rounds(0.9, alpha=0.05, power=0.9)
     for n in range(1, plan.rounds):
@@ -158,7 +158,7 @@ def test_plan_rounds_from_s_value():
 
 
 def test_plan_rounds_monte_carlo_certification_rate():
-    # In the style of minos.selftest: simulate at the hypothesised win rate over
+    # In the style of qcref.selftest: simulate at the hypothesised win rate over
     # the planned n and check the empirical certification rate clears the target
     # within Monte-Carlo tolerance (3 sigma of the binomial MC error).
     trials = 20_000
