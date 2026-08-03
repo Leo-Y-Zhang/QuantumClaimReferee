@@ -169,7 +169,7 @@ inputs render byte-identical (`test_report_is_deterministic`).
 | 1 | `chsh` returned anything else (NOT_CERTIFIED, UNDERPOWERED, ASSUMPTIONS_UNMET) |
 | 2 | argparse usage error — including every `ValueError` raised by the library, which `main()` catches and routes to `parser.error` so a bad input is a usage message, not a traceback |
 
-## Failure modes
+## The ways a verdict could be wrong
 
 | What breaks | Who notices | How we detect it | How we undo it |
 |---|---|---|---|
@@ -206,7 +206,7 @@ mathematical defect were found, the response is a new version plus a note in
 `CHANGELOG.md` naming the affected versions — the precedent already set there for
 the ledger and `naive_persetting_pvalues` fixes.
 
-## Test plan
+## What the 145 tests are there to falsify
 
 145 tests, `pytest -q`, plus `ruff check src tests`; both gate CI on Python 3.13.
 
@@ -233,14 +233,14 @@ correction. `level` at 0 and 1. And sacrifice-class adversaries **matching**
 That last one is the subtle case, and it is the reason the tool certifies from
 pooled wins: memory moves *per-setting* statistics, never the pooled win count.
 
-## Build order
+## The order the commands arrived in
 
 As built: `status` and `intervals` → `counts` and `fidelity` → `chsh`, the
 flagship → `multiple` and `verdict` → `report` → `selftest` (0.1.0) → `power` and
 `plan` (0.2.0) → `adversary` and the adversarial self-test (0.3.0) → the
 hardening pass that closed the default-deny holes found in review.
 
-## Two open questions
+## Loose ends in the reporting
 
 Should the reproducibility hash cover the policy (α, correction) and the
 estimates, not just `(name, raw_p, status)`? Today two reports over identical

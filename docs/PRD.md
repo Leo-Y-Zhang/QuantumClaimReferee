@@ -56,15 +56,6 @@ the scope below is as small as it is.
   counts all reduce to one schema, keeping the dependency footprint at numpy plus
   scipy.
 
-**Won't, this time**
-
-- Full density-matrix confidence *regions* over the PSD cone.
-- Purity, Rényi entropy, negativity, general entanglement witnesses.
-- Fidelity to a superposition target, which needs DFE or tomography.
-- SPAM and readout-error modelling.
-- Optional-stopping robustness. Choosing *n* adaptively is a different loophole,
-  and the fixed-*n* game tail does not cover it.
-
 ## Refuse, never guess
 
 The worst outcome is a false CERTIFIED that a user cites in a paper. Every guard
@@ -120,8 +111,15 @@ It does not run circuits, mitigate error, or improve results. It is the
 statistics layer that sits on top of one, and every number it produces is
 conditional on a measurement model the *user* declares.
 
-The five "Won't" items above share one reason, stated in `NOTES.md` and worth
-repeating: they need genuine quantum-information depth, and a solo author should
+Five capabilities a reader might reasonably expect are absent, and they are
+absent for one shared reason. There are no full density-matrix confidence
+*regions* over the PSD cone. No purity, Rényi entropy, negativity or general
+entanglement witnesses. No fidelity to a superposition target, which would need
+DFE or tomography. No SPAM or readout-error modelling. And no optional-stopping
+robustness: choosing *n* adaptively is a different loophole, and the fixed-*n*
+game tail does not cover it.
+
+The shared reason is stated in `NOTES.md` and worth repeating: they need genuine quantum-information depth, and a solo author should
 not self-certify a PSD-cone confidence region. Shipping a shaky number there
 would destroy the only thing this tool sells — that its numbers can be trusted.
 They are documented as absent rather than approximated.
@@ -141,7 +139,7 @@ server, no database and no shared state, so nothing can be revoked. If this ever
 grows a hosted surface, that answer changes and this paragraph has to be
 rewritten before it ships.
 
-## Rejected
+## Where the project said no
 
 **Repurposing the finance overfitting tool** — deflated Sharpe, PBO, purged
 walk-forward — at quantum data. Rejected after reading: the machinery does not
@@ -170,7 +168,7 @@ linear scan is slower and correct.
 viewing only, and an unmaintained statistics package that people might cite is
 worse than no package.
 
-## Two open questions
+## What would change v2
 
 Is the Elkouss–Wehner (npj QI 2016) near-optimal p-value worth implementing? It
 is a tighter refinement of the same idea, and since the plain game tail is valid
