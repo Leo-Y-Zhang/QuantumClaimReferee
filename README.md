@@ -1,6 +1,6 @@
 # Quantum Claim Referee - an honest, finite-sample statistical referee for quantum measurement claims
 
-[![CI](https://github.com/GreenPandaTech/ClaimReferee/actions/workflows/ci.yml/badge.svg)](https://github.com/GreenPandaTech/ClaimReferee/actions/workflows/ci.yml)
+[![CI](https://github.com/Leo-Y-Zhang/ClaimReferee/actions/workflows/ci.yml/badge.svg)](https://github.com/Leo-Y-Zhang/ClaimReferee/actions/workflows/ci.yml)
 
 Point `qcref` at raw measurement counts and get a *default-deny* verdict on whether
 a fidelity or entanglement/CHSH claim actually survives finite-sample scrutiny — with a
@@ -227,4 +227,4 @@ was killed.
 
 ## License
 
-Proprietary - All Rights Reserved (c) 2026 GreenPandaTech - portfolio viewing only.
+Proprietary - All Rights Reserved (c) 2026 Leo-Y-Zhang - portfolio viewing only.
