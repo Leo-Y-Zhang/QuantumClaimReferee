@@ -130,8 +130,9 @@ class CHSHResult:
         except ValueError:
             return (
                 f"more than {cap} (scan cap) for 90% power at the observed win "
-                f"rate {self.omega:.4f} -- if that rate is real, it is a whisker "
-                f"above the local bound"
+                f"rate {self.omega:.4f} -- if that rate is real it sits a whisker "
+                f"above the local bound, or a whisker below the Tsirelson bound, "
+                f"where half the runs overshoot it and are refused"
             )
         return (
             f"~{plan.rounds} (vs {self.rounds} run) for 90% power at alpha="

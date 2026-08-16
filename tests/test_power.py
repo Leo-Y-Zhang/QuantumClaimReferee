@@ -5,6 +5,7 @@ import pytest
 
 from qcref.chsh import chsh, s_to_omega
 from qcref.power import PlanResult, certification_power, critical_wins, plan_rounds
+from qcref.status import CERTIFIED
 
 
 def _exact_upper_tail(k: int, n: int, p: float) -> float:
@@ -17,11 +18,16 @@ def _exact_upper_tail(k: int, n: int, p: float) -> float:
 
 
 def _independent_critical_wins(n: int, alpha: float) -> int:
-    """Smallest k with P[Bin(n, 3/4) >= k] <= alpha, by brute force; n+1 if none."""
-    for k in range(0, n + 1):
-        if _exact_upper_tail(k, n, 0.75) <= alpha:
-            return k
-    return n + 1
+    """Smallest k with P[Bin(n, 3/4) >= k] <= alpha, by brute force; n+1 if none.
+
+    Searched downward from the unattainable n+1 (whose tail is 0): the tail is
+    decreasing in k, so the qualifying set is upward-closed and this lands on the
+    same k an upward scan would, in a few dozen steps instead of n.
+    """
+    k = n + 1
+    while k > 0 and _exact_upper_tail(k - 1, n, 0.75) <= alpha:
+        k -= 1
+    return k
 
 
 # ---------------------------------------------------------------- critical_wins
@@ -98,33 +104,45 @@ def test_certification_power_matches_independent_binomial_sum():
 # ------------------------------------------------------------------ plan_rounds
 
 
-def test_plan_rounds_perfect_win_rate_hand_computed():
-    # The arithmetic answer is 11 -- the smallest n with 0.75^n <= alpha -- and it
-    # is not a usable plan: certifying at n=11 needs 11 wins from 11, i.e. S=4.0,
-    # the algebraic PR-box maximum, which no quantum device can reach. A plan is
-    # advice, and advice that cannot be followed is not advice. The planner now
-    # skips every n whose threshold implies S above the Tsirelson bound, so the
-    # answer is the floor: 60 rounds, certifying at 51 wins (S = 2.800).
-    plan = plan_rounds(1.0, alpha=0.05, power=0.9)
+def test_plan_rounds_at_the_tsirelson_bound_hand_computed():
+    # The strongest hypothesis a quantum device can offer is exactly the Tsirelson
+    # bound, and the planner accepts it -- but only just. A device sitting on the
+    # bound overshoots it in half of all runs by sampling noise alone, and chsh
+    # refuses those as ASSUMPTIONS_UNMET, so the certification rate cannot be
+    # bought past ~1/2 however many rounds are spent: 198 rounds buy 0.5098, and
+    # 90% is out of reach at any n. A plan is advice, and advice that cannot be
+    # followed is not advice.
+    from qcref.chsh import TSIRELSON_S
+
+    plan = plan_rounds(s_to_omega(TSIRELSON_S), alpha=0.05, power=0.5, max_rounds=1000)
     assert isinstance(plan, PlanResult)
-    assert plan.rounds == 60
-    assert plan.critical_wins == 51
-    assert plan.power == pytest.approx(1.0)
+    assert plan.rounds == 198
+    assert plan.critical_wins == 159
+    assert plan.power == pytest.approx(0.5098, abs=5e-4)
+    with pytest.raises(ValueError, match="max_rounds"):
+        plan_rounds(s_to_omega(TSIRELSON_S), alpha=0.05, power=0.9, max_rounds=2000)
 
 
 def test_plan_rounds_is_minimal_against_independent_computation():
     # Verify minimality exhaustively with the independent no-scipy computation.
-    # Minimal now means minimal among the PHYSICALLY ATTAINABLE n, so smaller n
-    # are excluded by the Tsirelson condition rather than by insufficient power.
+    # Minimal means minimal among the n that can actually deliver the target
+    # through the shipped verdict, whose acceptance region is the WINDOW
+    # [c_alpha(n), max wins with S <= Tsirelson] -- not the open upper tail.
     from qcref.chsh import TSIRELSON_S, omega_to_s
 
-    plan = plan_rounds(0.9, alpha=0.05, power=0.9)
+    def _independent_window(n: int, c: int, p: float) -> float:
+        """P[c <= Bin(n, p) <= u], u the largest win count chsh will still judge."""
+        u = next(k for k in range(n, -1, -1) if omega_to_s(k / n) <= TSIRELSON_S)
+        if c > u:
+            return 0.0
+        return _exact_upper_tail(c, n, p) - _exact_upper_tail(u + 1, n, p)
+
+    plan = plan_rounds(0.82, alpha=0.05, power=0.9)
     for n in range(1, plan.rounds):
         c = _independent_critical_wins(n, 0.05)
-        unreachable = c > n or omega_to_s(c / n) > TSIRELSON_S
-        assert unreachable or _exact_upper_tail(c, n, 0.9) < 0.9
+        assert c > n or _independent_window(n, c, 0.82) < 0.9
     c = _independent_critical_wins(plan.rounds, 0.05)
-    assert _exact_upper_tail(c, plan.rounds, 0.9) >= 0.9
+    assert _independent_window(plan.rounds, c, 0.82) >= 0.9
 
 
 def test_plan_rounds_sawtooth_regression():
@@ -140,12 +158,13 @@ def test_plan_rounds_sawtooth_regression():
     assert certification_power(55, 0.9, alpha=0.05) == pytest.approx(0.9056, abs=5e-4)
     assert certification_power(56, 0.9, alpha=0.05) == pytest.approx(0.8970, abs=5e-4)
     assert certification_power(56, 0.9, alpha=0.05) < 0.9
-    # The power figures above are unchanged -- the sawtooth is a property of the
-    # binomial, not of the gate. What changed is which n the scan may return: 55
-    # is below the physical floor of 60 at this alpha, so the plan is 60/51.
-    plan = plan_rounds(0.9, alpha=0.05, power=0.9)
-    assert plan.rounds == 60
-    assert plan.critical_wins == 51
+    # The sawtooth is a property of the binomial, not of the gate, so those figures
+    # stand whatever the acceptance region is. What the gate changes is which n the
+    # scan may return: a win rate of 0.9 is S = 3.2 and no longer a hypothesis the
+    # planner will price at all, so the sawtooth is re-checked at a physical rate.
+    plan = plan_rounds(0.82, alpha=0.05, power=0.9)
+    assert plan.rounds == 360
+    assert plan.critical_wins == 284
 
 
 def test_plan_rounds_from_s_value():
@@ -160,16 +179,57 @@ def test_plan_rounds_from_s_value():
 def test_plan_rounds_monte_carlo_certification_rate():
     # In the style of qcref.selftest: simulate at the hypothesised win rate over
     # the planned n and check the empirical certification rate clears the target
-    # within Monte-Carlo tolerance (3 sigma of the binomial MC error).
+    # within Monte-Carlo tolerance (3 sigma of the binomial MC error). This is the
+    # documented S=2.4 plan, far enough below the Tsirelson bound that overshoot is
+    # negligible; the near-bound regime is covered below.
     trials = 20_000
-    plan = plan_rounds(0.85, alpha=0.05, power=0.9)
+    plan = plan_rounds(0.8, alpha=0.05, power=0.9)
     rng = np.random.default_rng(0)
-    wins = rng.binomial(plan.rounds, 0.85, size=trials)
-    rate = float(np.mean(wins >= plan.critical_wins))
+    wins = rng.binomial(plan.rounds, 0.8, size=trials)
+    status = {
+        int(w): chsh(int(w), plan.rounds, alpha=0.05, setting_randomness_declared=True).status
+        for w in np.unique(wins)
+    }
+    rate = float(np.mean([status[int(w)] == CERTIFIED for w in wins]))
     tol = 3.0 * math.sqrt(plan.power * (1.0 - plan.power) / trials)
     assert rate >= 0.9 - tol
     # and the empirical rate matches the exact power, not just the target
     assert rate == pytest.approx(plan.power, abs=tol)
+
+
+def test_plan_power_is_the_rate_the_shipped_verdict_certifies():
+    # The cross-check above scores runs with `wins >= critical_wins`, which is only
+    # half of what chsh() decides on: chsh additionally refuses a win count implying
+    # S above the Tsirelson bound. Near the bound that second condition is not a
+    # corner case -- at the hypothesised S=2.7 the plan promised power 0.9071 while
+    # chsh() certified 0.6423 of the runs, because 0.2674 of them landed above
+    # Tsirelson and came back ASSUMPTIONS_UNMET. Score the runs with the verdict
+    # itself, so the planner cannot promise a certification rate it does not deliver.
+    trials = 20_000
+    win_rate = s_to_omega(2.7)
+    plan = plan_rounds(win_rate, alpha=0.05, power=0.9)
+    rng = np.random.default_rng(0)
+    wins = rng.binomial(plan.rounds, win_rate, size=trials)
+    status = {
+        int(w): chsh(int(w), plan.rounds, alpha=0.05, setting_randomness_declared=True).status
+        for w in np.unique(wins)
+    }
+    rate = float(np.mean([status[int(w)] == CERTIFIED for w in wins]))
+    tol = 3.0 * math.sqrt(plan.power * (1.0 - plan.power) / trials)
+    assert rate >= 0.9 - tol
+    assert rate == pytest.approx(plan.power, abs=tol)
+
+
+def test_plan_rounds_rejects_win_rate_above_the_tsirelson_bound():
+    # A hypothesis no quantum device can realise is not a plan. chsh refuses a run
+    # above the Tsirelson bound as ASSUMPTIONS_UNMET however small its p-value, so
+    # such a hypothesis certifies only in the runs that contradict it -- at S=3.5
+    # the scan sold 60 rounds at a claimed power of 0.9962 while chsh certified
+    # 0.0080 of them, and that share shrinks as n grows rather than approaching the
+    # target. Refuse it, exactly as a rate at or below the classical bound is.
+    for p in (s_to_omega(3.5), 0.9, 1.0):
+        with pytest.raises(ValueError, match="Tsirelson"):
+            plan_rounds(p, alpha=0.05, power=0.9)
 
 
 def test_plan_rounds_rejects_win_rate_at_or_below_classical_bound():
@@ -202,8 +262,8 @@ def test_plan_rounds_raises_when_scan_cap_exceeded():
 
 
 def test_plan_result_summary_mentions_the_numbers():
-    plan = plan_rounds(0.9, alpha=0.05, power=0.9)
+    plan = plan_rounds(0.82, alpha=0.05, power=0.9)
     text = plan.summary()
-    assert "60" in text
-    assert "51" in text
+    assert "360" in text
+    assert "284" in text
     assert "0.05" in text

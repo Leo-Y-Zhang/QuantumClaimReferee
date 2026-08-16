@@ -51,11 +51,11 @@ def test_regime_a_scarce_data_underpowered():
 
 
 def test_underpowered_summary_states_rounds_needed():
-    # plan_rounds(0.825, alpha=0.05, power=0.9) -> 255 rounds; the UNDERPOWERED
+    # plan_rounds(0.825, alpha=0.05, power=0.9) -> 373 rounds; the UNDERPOWERED
     # summary must surface that hint, honestly labelled with the assumed power.
     r = chsh(66, 80, setting_randomness_declared=True)
     text = r.summary()
-    assert "255" in text
+    assert "373" in text
     assert "90% power" in text
     assert "observed" in text
 

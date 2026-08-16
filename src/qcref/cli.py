@@ -144,7 +144,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--win-rate",
         type=float,
         dest="win_rate",
-        help="hypothesised per-round win probability (3/4 < p <= 1)",
+        help="hypothesised per-round win probability (3/4 < p <= 0.8536, Tsirelson)",
     )
     p_plan.add_argument("--alpha", type=float, default=0.05)
     p_plan.add_argument("--power", type=float, default=0.9)

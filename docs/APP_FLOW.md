@@ -46,7 +46,7 @@ should be. Re-run with `--n 8000` to watch the gap close, which is the honest
 half of the pitch. Exit 0.
 
 **`qcref plan --S 2.4 --alpha 0.05 --power 0.9`** comes before spending shots: 604
-rounds, certify iff wins ≥ 471, exact power 0.9007. Exit 0.
+rounds, certify iff wins ≥ 471, exact power 0.9004. Exit 0.
 
 **`qcref chsh --wins 66 --rounds 80 --randomised`** is the actual judgement on real
 data. It prints the status, the memory-robust p-value marked `<- use this`, the
@@ -63,7 +63,7 @@ That fourth command is the only one whose exit code carries information.
 | Command | Success | Refusal (still a normal outcome) | Bad input | Slow / heavy |
 |---|---|---|---|---|
 | `chsh` | `CERTIFIED` → exit 0 | `UNDERPOWERED`, `NOT_CERTIFIED`, `ASSUMPTIONS_UNMET` → exit 1, each with a printed reason | `wins > rounds`, α or level outside (0, 1), non-positive rounds → usage message, exit 2 | instant |
-| `plan` | prints the minimal *n*, critical wins, exact power, and the sawtooth note → exit 0 | none — an unreachable request is an input error, not a refusal | `--S` at or below 2 / win rate ≤ 3/4, both or neither of `--S`/`--win-rate`, target unmet within `--max-rounds` → exit 2 | linear scan in *n*; a target needing millions of rounds takes seconds and then raises rather than hanging silently |
+| `plan` | prints the minimal *n*, critical wins, exact power, and the sawtooth note → exit 0 | none — an unreachable request is an input error, not a refusal | `--S` outside (2, 2√2] / win rate outside (3/4, 0.8536], both or neither of `--S`/`--win-rate`, target unmet within `--max-rounds` → exit 2 | linear scan in *n*; a target needing millions of rounds takes seconds and then raises rather than hanging silently |
 | `selftest` | prints the false-positive table and Wilson coverage → exit 0 | none | `--n <= 0`, `--trials <= 0` → exit 2 | ~1 s at defaults (100 000 trials, vectorised) |
 | `selftest --adversarial` | prints the exact ceiling and a scorecard per adversary, each flagged `<- bounded` or `<- CHECK` → exit 0 | none | as above | ~1 s at the 2000-trial default; ~2 s at *n* = 1000 × 4000 trials. Vectorised across trials, sequential in rounds |
 | `demo` | prints the five-act worked example → exit 0 | none | none — takes no arguments | ~1 s |

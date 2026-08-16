@@ -150,7 +150,15 @@ a valid memory-robust input only if settings were drawn per round.
 
 `plan_rounds` refuses `win_rate <= 3/4`. At or below the classical bound the
 certification is calibrated, so its success probability never exceeds α and no
-target power is reachable at any *n*.
+target power is reachable at any *n*. It refuses a `win_rate` above the Tsirelson
+bound for the mirror-image reason: `chsh` returns `ASSUMPTIONS_UNMET` for a run
+above it, so such a hypothesis certifies only in the runs that contradict it — a
+probability that falls with *n*, so no target power is reachable. Between the two
+bounds the
+power it reports is that of the *window* `[c_alpha(n), largest wins with S ≤
+Tsirelson]` rather than of the bare upper tail — scoring the tail promised
+certification rates the verdict does not deliver (0.9071 against an actual 0.6423
+at S = 2.7), and it is the second gate above that the tail ignores.
 
 `Study` is default-deny: `CERTIFIED` only if *every* hypothesis clears α after
 correction, and any untestable hypothesis makes the whole verdict

@@ -78,12 +78,18 @@ def test_plan_with_s(capsys):
 
 
 def test_plan_with_win_rate(capsys):
-    rc = main(["plan", "--win-rate", "0.9"])
+    rc = main(["plan", "--win-rate", "0.82"])
     assert rc == 0
     out = capsys.readouterr().out
-    # 55 is below the physical floor of 60 at alpha=0.05 (certifying there
-    # would need a win count implying S above the Tsirelson bound).
-    assert "PLAN: 60 rounds" in out
+    assert "PLAN: 360 rounds" in out
+
+
+def test_plan_rejects_a_win_rate_above_the_tsirelson_bound():
+    # 0.9 is S = 3.2. chsh refuses such a run, so pricing one is a usage error,
+    # not a plan -- the same posture as an --S at or below the local bound.
+    with pytest.raises(SystemExit) as exc:
+        main(["plan", "--win-rate", "0.9"])
+    assert exc.value.code == 2
 
 
 def test_plan_requires_exactly_one_of_s_and_win_rate():

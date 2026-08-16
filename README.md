@@ -54,7 +54,7 @@ CHSH: S = 2.600  2.6000  [1.8194, 3.1423]  (95% wilson->S, n=80)
   p (Azuma, loose)    : 4.066e-01
   p (naive, observed) : 3.874e-02   (for contrast only)
   assumptions         : settings_randomised_per_round, no_signaling
-  rounds for power    : ~255 (vs 80 run) for 90% power at alpha=0.05, IF the observed win rate 0.8250 persists
+  rounds for power    : ~373 (vs 80 run) for 90% power at alpha=0.05, IF the observed win rate 0.8250 persists
 ```
 
 ## Install
@@ -88,23 +88,23 @@ print(qr.referee_report(study.run(), title="device_run_1"))
 
 # Plan the next run: minimal rounds so certification succeeds with 90% probability
 plan = qr.plan_rounds(qr.s_to_omega(2.4), alpha=0.05, power=0.9)
-print(plan.summary())        # -> 604 rounds, certify iff wins >= 471, exact power 0.9007
+print(plan.summary())        # -> 604 rounds, certify iff wins >= 471, exact power 0.9004
 ```
 
 ## Planning an experiment: `qcref plan`
 
 Before running rounds, ask how many you need: `qcref plan --S 2.4 --alpha 0.05
 --power 0.9` (or `--win-rate 0.8`) returns the **minimal** `n` such that the shipped
-certification — the same game-tail criterion `chsh` decides on, reused, not
-reimplemented — succeeds with probability ≥ the target when the per-round win rate
-truly is the hypothesised one. Everything is exact Binomial; no Gaussian
-approximation is used anywhere.
+certification — the whole of it, both the game-tail criterion `chsh` decides on and
+its refusal of a value above the Tsirelson bound — succeeds with probability ≥ the
+target when the per-round win rate truly is the hypothesised one. Everything is exact
+Binomial; no Gaussian approximation is used anywhere.
 
 ```text
 $ qcref plan --S 2.4 --alpha 0.05 --power 0.9
 PLAN: 604 rounds  (hypothesis: win rate 0.8000, S = 2.400)
   certify iff wins >=  : 471  (alpha=0.05)
-  exact power          : 0.9007  (target 0.9)
+  exact power          : 0.9004  (target 0.9)
   note                 : minimal n meeting the target; exact binomial
                          power is sawtoothed, so a larger n can dip
                          below the target again
@@ -114,9 +114,13 @@ The non-obvious part: exact binomial power is **non-monotone in `n`** (a sawtoot
 each time the integer critical win count steps up, the power momentarily drops), so
 a bisection over `n` is invalid. `qcref` scans and returns the first `n` meeting the
 target; by the same sawtooth, some larger `n` can dip below the target again, and the
-output says so. An `UNDERPOWERED` verdict now also carries a planning hint: roughly
-how many rounds 90% power would take **if** the observed win rate persists — labelled
-as the assumption it is, since the observed rate is an estimate, not the truth.
+output says so. The second non-obvious part: because a run above the Tsirelson bound
+is *refused*, the acceptance region is a window and not an open tail, so a hypothesis
+pushed towards that bound gets **harder** to certify, not easier — 0.82 needs 360
+rounds where 0.85 needs 16,272. An `UNDERPOWERED` verdict now also carries a planning
+hint: roughly how many rounds 90% power would take **if** the observed rate
+persists — labelled as the assumption it is, since that rate is an estimate, not
+the truth.
 
 ## The memory loophole, attacked for real: `qcref selftest --adversarial`
 
@@ -199,7 +203,7 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 ## Tests
 
 ```bash
-python -m pytest        # 145 tests
+python -m pytest        # 148 tests
 ```
 
 The suite covers CHSH certification and its guardrails, both interval methods, the

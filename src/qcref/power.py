@@ -27,7 +27,7 @@ from dataclasses import dataclass
 
 from scipy.stats import binom
 
-from .chsh import CLASSICAL_WIN, TSIRELSON_S, game_tail_pvalue, omega_to_s
+from .chsh import CLASSICAL_WIN, TSIRELSON_S, game_tail_pvalue, omega_to_s, s_to_omega
 
 __all__ = [
     "PlanResult",
@@ -69,6 +69,21 @@ def critical_wins(rounds: int, alpha: float) -> int:
     return k
 
 
+def _max_certifiable_wins(rounds: int) -> int:
+    """Largest win count at ``rounds`` that :func:`qcref.chsh.chsh` will still judge.
+
+    Above it the implied ``S`` exceeds the Tsirelson bound and the verdict is
+    ``ASSUMPTIONS_UNMET``, not ``CERTIFIED`` -- so the acceptance region is the
+    *window* ``[c_alpha(rounds), this]``, not an open upper tail. Derived by walking
+    down from the arithmetic estimate against the same ``omega_to_s`` predicate the
+    verdict applies, so the two cannot part company on a rounding edge.
+    """
+    u = min(rounds, int(rounds * s_to_omega(TSIRELSON_S)) + 1)
+    while u >= 0 and omega_to_s(u / rounds) > TSIRELSON_S:
+        u -= 1
+    return u
+
+
 def is_physically_attainable(rounds: int, alpha: float) -> bool:
     """Can the critical win count at ``rounds`` be reached by a quantum device?
 
@@ -104,11 +119,18 @@ def minimum_physical_rounds(alpha: float, *, max_rounds: int = DEFAULT_MAX_ROUND
 
 
 def certification_power(rounds: int, win_rate: float, *, alpha: float = 0.05) -> float:
-    """Exact probability that ``chsh`` certifies at ``alpha`` with ``rounds`` rounds.
+    """Exact probability of *reaching* the certification threshold at ``rounds``.
 
     Assumes rounds are i.i.d. wins with probability ``win_rate``; the value is the
     exact binomial tail ``P[Bin(rounds, win_rate) >= c_alpha(rounds)]``. Zero when
     certification is unattainable at this ``rounds``.
+
+    Reaching the threshold is necessary but not sufficient for a ``CERTIFIED``
+    verdict: :func:`qcref.chsh.chsh` also refuses a win count implying ``S`` above
+    the Tsirelson bound. At ``win_rate = 3/4`` the difference is immaterial and this
+    tail is exactly the memory-LHV ceiling :mod:`qcref.selftest` scores adversaries
+    against; near the Tsirelson bound it is an *over*-statement of the rate at which
+    the verdict certifies. :func:`plan_rounds` reports that rate itself.
     """
     if not (math.isfinite(win_rate) and 0.0 <= win_rate <= 1.0):
         raise ValueError("win_rate must be in [0, 1]")
@@ -194,6 +216,14 @@ def plan_rounds(
             "it the certify probability never exceeds alpha, so no round count "
             "reaches the target power"
         )
+    if omega_to_s(win_rate) > TSIRELSON_S:
+        raise ValueError(
+            f"win_rate {win_rate} implies S = {omega_to_s(win_rate):.3f}, above the "
+            f"Tsirelson bound {TSIRELSON_S:.3f}: no quantum system can sustain it, and "
+            "chsh refuses a run above that bound as ASSUMPTIONS_UNMET, so such a "
+            "hypothesis certifies only when the data contradict it -- a probability "
+            "that falls with n, so no round count reaches the target power"
+        )
     _validate_alpha(alpha)
     if not (math.isfinite(power) and 0.0 < power < 1.0):
         raise ValueError("power must be in (0, 1)")
@@ -207,7 +237,14 @@ def plan_rounds(
         # Skip any n whose threshold implies S above the Tsirelson bound: the
         # plan would be arithmetically valid and physically impossible to meet.
         if c <= n and omega_to_s(c / n) <= TSIRELSON_S:
-            achieved = float(binom.sf(c - 1, n, win_rate))
+            # The verdict's acceptance region is a window, not an upper tail: a run
+            # above the Tsirelson bound comes back ASSUMPTIONS_UNMET. Scoring the
+            # bare tail promised a certification rate the shipped verdict does not
+            # deliver -- 0.9071 against an actual 0.6423 at S = 2.7.
+            achieved = float(
+                binom.cdf(_max_certifiable_wins(n), n, win_rate)
+                - binom.cdf(c - 1, n, win_rate)
+            )
             if achieved >= power:
                 return PlanResult(
                     rounds=n,

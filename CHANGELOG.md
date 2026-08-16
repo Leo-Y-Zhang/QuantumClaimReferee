@@ -6,6 +6,22 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Fixed
+- `plan_rounds` (`qcref plan`) priced experiments against half of the shipped
+  certification. It scored the bare game tail `P[Bin(n, p) >= c_alpha(n)]` and
+  ignored the Tsirelson refusal `chsh` applies before the p-value, so the power
+  it promised was one the verdict does not deliver: at the hypothesised S = 2.7
+  it returned 189 rounds at a claimed power of 0.9071, while `chsh` certified
+  0.6423 of such runs and sent 0.2674 back as `ASSUMPTIONS_UNMET` for landing
+  above the Tsirelson bound. The acceptance region is a *window*, and the power
+  now measures that window: S = 2.7 needs 812 rounds, not 189. The documented
+  S = 2.4 plan is unmoved at 604 rounds (its power reads 0.9004 rather than
+  0.9007), because at that distance from the bound overshoot is negligible. A
+  hypothesis above the Tsirelson bound is now refused outright, as one at or
+  below 3/4 always was - no round count makes either certify, and
+  `qcref plan --S 3.5` was selling 60 rounds at a claimed 0.9962 against an
+  actual 0.0080.
+
 ### Changed
 - Renamed the project from **Minos** to **Quantum Claim Referee**. The import
   name and the console command are now `qcref` (was `minos`), and the
