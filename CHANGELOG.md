@@ -7,6 +7,36 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- The shipped worked example certified a claim the library exists to refuse.
+  `examples/run_example.py` added `chsh(1720, 2000, ...)` to its study labelled
+  `S=2.88`, above the Tsirelson bound `2*sqrt(2) = 2.8284`, so `chsh` had already
+  returned `ASSUMPTIONS_UNMET` for it. The example read only `.p_memory_robust`
+  (9.43e-34) and never looked at `.status`, so the report printed
+  `VERDICT: CERTIFIED` for a physically impossible entanglement claim. The
+  hypothesis is now built from the result - 1700 wins of 2000 (S = 2.80), the
+  label derived as `f"S={r.S:.2f}"` rather than typed by hand, and
+  `assumptions_met` carried across so a refusal reaches the report. Nothing was
+  watching: `testpaths` is `tests` and the lint scope was `src tests`, both of
+  which exclude `examples/`. CI now lints `examples` too, and
+  `tests/test_examples.py` parses every `chsh` call in the example and asserts
+  the certifier accepts its arguments.
+- A guard test in `tests/test_power.py` passed for the wrong reason. Five of the
+  six cases in `test_plan_rounds_rejects_out_of_range_inputs` used
+  `win_rate=0.9`, which is S = 3.2 and is rejected by the Tsirelson check before
+  control ever reaches the `alpha`, `power` and `max_rounds` guards they were
+  written to exercise - deleting the `power` and `max_rounds` guards outright
+  left all six cases green. The win rate is now 0.82 (S = 2.56, legal on both
+  sides) and each case asserts *which* guard fired, which is load-bearing:
+  without the `match=`, a missing `max_rounds` guard still raises, just from the
+  "target power not reached" path further down. Against that same deletion the
+  corrected test fails on all three affected cases.
+- `docs/APP_FLOW.md` described `examples/run_example.py` as "the same five acts as
+  `demo`", "runnable without installing". Neither half was true. `_cmd_demo`
+  prints four sections and is not a superset - it has the best-of-6 Holm scan the
+  example omits, and lacks the null sweep and the referee report the example adds -
+  and the package lives under `src/` and needs numpy and scipy, so a cold clone
+  gets `ModuleNotFoundError: No module named 'qcref'`. The command table's
+  "five-act" description of `demo` is corrected in the same pass.
 - `plan_rounds` (`qcref plan`) priced experiments against half of the shipped
   certification. It scored the bare game tail `P[Bin(n, p) >= c_alpha(n)]` and
   ignored the Tsirelson refusal `chsh` applies before the p-value, so the power

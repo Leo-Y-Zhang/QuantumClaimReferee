@@ -240,19 +240,25 @@ def test_plan_rounds_rejects_win_rate_at_or_below_classical_bound():
             plan_rounds(p, alpha=0.05, power=0.9)
 
 
+# The win rate here has to clear the classical bound AND stay under Tsirelson, or
+# the case never reaches the guard it was written for: win_rate=0.9 is S = 3.2,
+# which plan_rounds rejects on physicality first, so every alpha/power/max_rounds
+# case would have passed without those guards existing at all. 0.82 is S = 2.56,
+# legal on both sides. The match= is load-bearing for the same reason -- it pins
+# which guard fired, not merely that something did.
 @pytest.mark.parametrize(
-    "kwargs",
+    ("kwargs", "reason"),
     [
-        {"win_rate": 1.1},
-        {"win_rate": 0.9, "alpha": 0.0},
-        {"win_rate": 0.9, "alpha": 1.0},
-        {"win_rate": 0.9, "power": 0.0},
-        {"win_rate": 0.9, "power": 1.0},
-        {"win_rate": 0.9, "max_rounds": 0},
+        ({"win_rate": 1.1}, "win_rate must be in"),
+        ({"win_rate": 0.82, "alpha": 0.0}, "alpha must be in"),
+        ({"win_rate": 0.82, "alpha": 1.0}, "alpha must be in"),
+        ({"win_rate": 0.82, "power": 0.0}, "power must be in"),
+        ({"win_rate": 0.82, "power": 1.0}, "power must be in"),
+        ({"win_rate": 0.82, "max_rounds": 0}, "max_rounds must be positive"),
     ],
 )
-def test_plan_rounds_rejects_out_of_range_inputs(kwargs):
-    with pytest.raises(ValueError):
+def test_plan_rounds_rejects_out_of_range_inputs(kwargs, reason):
+    with pytest.raises(ValueError, match=reason):
         plan_rounds(**kwargs)
 
 

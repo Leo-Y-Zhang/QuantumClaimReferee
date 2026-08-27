@@ -25,8 +25,13 @@ a stack trace.
   (`[project.scripts] qcref = "qcref.cli:main"`).
 - `python -m qcref.cli <command>` — works via the `__main__` guard in `cli.py`.
   `python -m qcref` does **not** work, because there is no `__main__.py`.
-- `python examples/run_example.py` — the same five acts as `demo`, fully offline,
-  runnable without installing.
+- `python examples/run_example.py` — five acts: the two-regime wedge, the null
+  miscalibration sweep, a referee report, and a plan. It overlaps `demo` without
+  being identical to it — `demo` also prints the best-of-6 Holm scan, which the
+  example omits, and the example adds the sweep and the report, which `demo`
+  omits. Fully offline, but only *after* `pip install -e .`: the package lives
+  under `src/` and pulls in numpy and scipy, so a cold clone cannot run it in
+  place.
 - `import qcref as qr` — the library path. The CLI adds no logic of its own
   beyond argument parsing and the exit code.
 
@@ -66,7 +71,7 @@ That fourth command is the only one whose exit code carries information.
 | `plan` | prints the minimal *n*, critical wins, exact power, and the sawtooth note → exit 0 | none — an unreachable request is an input error, not a refusal | `--S` outside (2, 2√2] / win rate outside (3/4, 0.8536], both or neither of `--S`/`--win-rate`, target unmet within `--max-rounds` → exit 2 | linear scan in *n*; a target needing millions of rounds takes seconds and then raises rather than hanging silently |
 | `selftest` | prints the false-positive table and Wilson coverage → exit 0 | none | `--n <= 0`, `--trials <= 0` → exit 2 | ~1 s at defaults (100 000 trials, vectorised) |
 | `selftest --adversarial` | prints the exact ceiling and a scorecard per adversary, each flagged `<- bounded` or `<- CHECK` → exit 0 | none | as above | ~1 s at the 2000-trial default; ~2 s at *n* = 1000 × 4000 trials. Vectorised across trials, sequential in rounds |
-| `demo` | prints the five-act worked example → exit 0 | none | none — takes no arguments | ~1 s |
+| `demo` | prints the four-section worked example — both wedge regimes, the best-of-6 Holm scan, a plan → exit 0 | none | none — takes no arguments | ~1 s |
 | *(any)* | `--version`, `--help` → exit 0 | — | no subcommand → usage message, exit 2 | — |
 
 Three further notes on states.

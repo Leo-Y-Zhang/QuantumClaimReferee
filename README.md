@@ -32,6 +32,9 @@ this provides — is:
 
 ## The wedge, in one run
 
+After the [install](#install) below — each of these takes about a second and touches
+nothing outside the process:
+
 ```bash
 qcref selftest --n 80          # naive CHSH false-positive rate ~0.074 vs nominal 0.05
 qcref selftest --n 8000        # at high statistics the gap vanishes
@@ -59,13 +62,19 @@ CHSH: S = 2.600  2.6000  [1.8194, 3.1423]  (95% wilson->S, n=80)
 
 ## Install
 
+Python 3.11 or newer, and nothing else — no solver, no toolchain, no dataset, no API
+key, no service. `pip` fetches the only two dependencies.
+
 ```bash
-python -m pip install -e .
+git clone https://github.com/Leo-Y-Zhang/QuantumClaimReferee.git
+cd QuantumClaimReferee
+python -m pip install -e ".[dev]"     # drop the [dev] if you will not run the tests
 ```
 
 The distribution is `quantum-claim-referee`; the import name and the command are both
 `qcref`. Dependencies are limited to `numpy` and `scipy`. No network access is ever
-performed.
+performed. The worked example, `python examples/run_example.py`, needs that install
+too: the package lives under `src/`, so a cold clone cannot import it in place.
 
 ## Library usage
 
@@ -202,8 +211,10 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 
 ## Tests
 
+One command, no arguments and no fixtures to fetch:
+
 ```bash
-python -m pytest        # 148 tests
+python -m pytest        # 154 tests
 ```
 
 The suite covers CHSH certification and its guardrails, both interval methods, the
@@ -216,8 +227,10 @@ ceiling against every adversary, sacrifice-class pooled wins matching
 `Binomial(n, 3/4)`, rejection of non-local strategy indices, regressions
 proving that an adversary that clones its RNG to peek at upcoming settings
 gains nothing and that one that tries to write the referee's score ledger
-raises instead of certifying).
-Requires Python 3.11+; CI runs on Python 3.13.
+raises instead of certifying). It also guards the worked example against the
+library, so a demo can never certify a claim the certifier itself refuses.
+Requires Python 3.11+; CI runs the same command on Python 3.13, plus
+`ruff check src tests examples`.
 
 ## Design documents
 
