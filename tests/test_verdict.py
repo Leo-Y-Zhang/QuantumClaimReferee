@@ -41,3 +41,29 @@ def test_correction_can_flip_a_verdict():
 def test_empty_study_raises():
     with pytest.raises(ValueError):
         Study().run()
+
+
+def test_benjamini_hochberg_correction_end_to_end_not_certified():
+    # Same family used to hand-verify benjamini_hochberg() in test_multiple.py:
+    # p = [0.001, 0.045, 0.2, 0.6]. The correct BH adjustment (m=4) gives
+    # [0.004, 0.09, 0.266666..., 0.6] -- only the first hypothesis clears
+    # alpha=0.05, so the study-wide, default-deny verdict must be
+    # NOT_CERTIFIED (CERTIFIED requires *every* hypothesis to clear the bar).
+    # A broken benjamini_hochberg() that deflates every p-value by roughly an
+    # extra factor of m (dividing instead of multiplying) pushes all four
+    # adjusted values under alpha and would wrongly report CERTIFIED here.
+    study = Study(alpha=0.05, correction="benjamini-hochberg")
+    for name, p in [("a", 0.001), ("b", 0.045), ("c", 0.2), ("d", 0.6)]:
+        study.add(name, p)
+    v = study.run()
+    assert v.classification == "NOT_CERTIFIED"
+    by_name = {r.name: r for r in v.results}
+    assert by_name["a"].status == "CERTIFIED"
+    assert by_name["d"].status == "NOT_CERTIFIED"
+    assert by_name["d"].adjusted_p == pytest.approx(0.6)
+
+
+@pytest.mark.parametrize("alpha", [1.0, 0.0])
+def test_alpha_outside_open_unit_interval_raises(alpha):
+    with pytest.raises(ValueError):
+        Study(alpha=alpha)

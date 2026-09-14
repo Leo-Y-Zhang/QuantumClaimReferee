@@ -89,7 +89,9 @@ def test_default_deny_without_randomness_declaration():
     assert not r.certified
 
 
-@pytest.mark.parametrize("kwargs", [{"alpha": 1.5}, {"alpha": 0.0}, {"level": 1.0}])
+@pytest.mark.parametrize(
+    "kwargs", [{"alpha": 1.5}, {"alpha": 1.0}, {"alpha": 0.0}, {"level": 1.0}]
+)
 def test_out_of_range_alpha_or_level_raise(kwargs):
     with pytest.raises(ValueError):
         chsh(6400, 8000, setting_randomness_declared=True, **kwargs)
