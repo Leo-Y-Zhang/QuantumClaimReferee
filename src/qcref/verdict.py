@@ -13,7 +13,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
-from ._checks import is_boolean
+from ._checks import affirmation, is_boolean
 from .multiple import benjamini_hochberg, bonferroni, holm
 from .status import ASSUMPTIONS_UNMET, CERTIFIED, NOT_CERTIFIED
 
@@ -112,6 +112,9 @@ class Study:
         # Validate at every entry point -- a testable hypothesis MUST carry a real
         # p-value, so an invalid one can never slip through to a false CERTIFIED
         # (e.g. via correction='none', which does not re-validate).
+        # Only a real bool says whether assumptions hold: read as a truth value,
+        # assumptions_met="False" counted as met and the hypothesis could certify.
+        affirmation(hypothesis.assumptions_met, f"hypothesis {hypothesis.name!r}: assumptions_met")
         if hypothesis.assumptions_met and not _valid_p(hypothesis.pvalue):
             raise ValueError(
                 f"hypothesis {hypothesis.name!r}: a testable hypothesis needs a finite "

@@ -19,6 +19,10 @@ All notable changes to this project are documented here. The format is based on
   the p-value belongs (for instance `result.certified`) was read as `p = 0`,
   certifying exactly the results that had failed. Booleans, Python or numpy, are
   now refused as p-values.
+- `chsh(..., setting_randomness_declared="no")` certified, and so did `"False"`
+  or `1`: the affirmation was read as a truth value. `Study` read
+  `assumptions_met` the same way, so `assumptions_met="False"` counted as met.
+  Both now accept only a real boolean (Python or numpy) and raise otherwise.
 - `fidelity_to_basis_state` and `probability_interval` scored a target the
   register cannot be in -- the wrong qubit count, or not a 0/1 string -- as
   "measured zero times" and returned a confident interval near 0. They now

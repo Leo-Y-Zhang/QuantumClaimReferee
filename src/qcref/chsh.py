@@ -34,7 +34,7 @@ from dataclasses import dataclass, field
 
 from scipy.stats import binom, norm
 
-from ._checks import whole_number
+from ._checks import affirmation, whole_number
 from .intervals import Interval, wilson_interval
 from .status import ASSUMPTIONS_UNMET, CERTIFIED, NOT_CERTIFIED, UNDERPOWERED
 
@@ -177,6 +177,10 @@ def chsh(
     # tail was 0.0 -- CERTIFIED for data containing no rounds at all.
     wins = whole_number(wins, "wins")
     rounds = whole_number(rounds, "rounds")
+    # Only a real True affirms: read as a truth value, "no" or "False" did too.
+    setting_randomness_declared = affirmation(
+        setting_randomness_declared, "setting_randomness_declared"
+    )
     if rounds <= 0:
         raise ValueError("rounds must be positive")
     if not (0 <= wins <= rounds):

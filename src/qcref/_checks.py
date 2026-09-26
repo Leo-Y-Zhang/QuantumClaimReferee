@@ -32,3 +32,15 @@ def whole_number(value, what: str) -> int:
 
 def is_boolean(value) -> bool:
     return isinstance(value, bool | np.bool_)
+
+
+def affirmation(value, what: str) -> bool:
+    """Return ``value`` if it is a real boolean (Python or numpy), else raise.
+
+    An affirmation gates a verdict, so only ``True`` may affirm. Read as a truth
+    value, the strings ``"no"`` and ``"False"`` (say, from a CSV or an
+    environment variable) and the number ``1`` all affirmed and could certify.
+    """
+    if isinstance(value, bool | np.bool_):
+        return bool(value)
+    raise ValueError(f"{what} must be True or False, got {value!r}")
