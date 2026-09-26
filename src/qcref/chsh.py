@@ -34,6 +34,7 @@ from dataclasses import dataclass, field
 
 from scipy.stats import binom, norm
 
+from ._checks import whole_number
 from .intervals import Interval, wilson_interval
 from .status import ASSUMPTIONS_UNMET, CERTIFIED, NOT_CERTIFIED, UNDERPOWERED
 
@@ -171,6 +172,11 @@ def chsh(
         With the memory-robust p-value, the interval on ``S``, and a default-deny
         ``status`` in {CERTIFIED, UNDERPOWERED, NOT_CERTIFIED, ASSUMPTIONS_UNMET}.
     """
+    # Whole numbers only: with wins = rounds = inf the checks below all passed,
+    # omega and S came out nan (so the Tsirelson guard never fired) and the game
+    # tail was 0.0 -- CERTIFIED for data containing no rounds at all.
+    wins = whole_number(wins, "wins")
+    rounds = whole_number(rounds, "rounds")
     if rounds <= 0:
         raise ValueError("rounds must be positive")
     if not (0 <= wins <= rounds):
@@ -282,6 +288,7 @@ def wins_from_setting_counts(
         for (a, b), c in outcomes.items():
             if a not in (0, 1) or b not in (0, 1):
                 raise ValueError("outcomes (a, b) must be in {0, 1}")
+            c = whole_number(c, f"count for setting {(x, y)} outcome {(a, b)}")
             if c < 0:
                 raise ValueError("counts must be non-negative")
             rounds += c

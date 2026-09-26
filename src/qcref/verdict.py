@@ -13,6 +13,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 
+from ._checks import is_boolean
 from .multiple import benjamini_hochberg, bonferroni, holm
 from .status import ASSUMPTIONS_UNMET, CERTIFIED, NOT_CERTIFIED
 
@@ -27,7 +28,10 @@ _CORRECTIONS = {
 
 
 def _valid_p(p: float) -> bool:
-    return math.isfinite(p) and 0.0 <= p <= 1.0
+    # A bool is an int, so False used to pass as p = 0 and certify: passing a
+    # flag such as ``result.certified`` in the p-value slot certified exactly
+    # the results that had failed.
+    return not is_boolean(p) and math.isfinite(p) and 0.0 <= p <= 1.0
 
 
 @dataclass(frozen=True)
