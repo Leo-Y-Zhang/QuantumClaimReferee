@@ -214,9 +214,9 @@ mathematical defect were found, the response is a new version plus a note in
 `CHANGELOG.md` naming the affected versions — the precedent already set there for
 the ledger and `naive_persetting_pvalues` fixes.
 
-## What the 188 tests are there to falsify
+## What the 199 tests are there to falsify
 
-188 tests, `pytest -q`, plus `ruff check src tests examples`; both gate CI on Python 3.13.
+199 tests, `pytest -q`, plus `ruff check src tests examples`; both gate CI on Python 3.13.
 
 **Positive.** `chsh(6400, 8000, randomised)` certifies. `plan --S 2.4` returns 604
 rounds with critical count 471 and exact power 0.9007. The report contains the

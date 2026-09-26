@@ -214,7 +214,7 @@ quantum-information depth and are the honest boundary of a statistics-first tool
 One command, no arguments and no fixtures to fetch:
 
 ```bash
-python -m pytest        # 188 tests
+python -m pytest        # 199 tests
 ```
 
 The suite covers CHSH certification and its guardrails, both interval methods, the

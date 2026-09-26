@@ -199,3 +199,26 @@ def test_from_qiskit_does_not_truncate_fractional_counts():
 
     with pytest.raises(ValueError, match="integer"):
         CountsDataset.from_qiskit(Frac(), povm="ideal_projective")
+
+
+@pytest.mark.parametrize("flag", ["no", "False", "", 1, 0, None])
+def test_chsh_randomness_affirmation_must_be_a_real_bool(flag):
+    # "no" and "False" are truthy strings: read as a truth value they affirmed
+    # randomised settings and 850/1000 came back CERTIFIED.
+    with pytest.raises(ValueError, match="setting_randomness_declared"):
+        chsh(850, 1000, setting_randomness_declared=flag)
+
+
+def test_chsh_accepts_numpy_bool_affirmation():
+    import numpy as np
+
+    assert chsh(850, 1000, setting_randomness_declared=np.True_).certified
+    assert chsh(850, 1000, setting_randomness_declared=np.False_).status == "ASSUMPTIONS_UNMET"
+
+
+@pytest.mark.parametrize("flag", ["False", "no", 1, None])
+def test_study_assumptions_met_must_be_a_real_bool(flag):
+    with pytest.raises(ValueError, match="assumptions_met"):
+        Study().add("x", 0.001, assumptions_met=flag)
+    with pytest.raises(ValueError, match="assumptions_met"):
+        Study().add_hypothesis(Hypothesis("x", 0.001, assumptions_met=flag))
