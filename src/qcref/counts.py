@@ -16,6 +16,8 @@ import warnings
 from dataclasses import dataclass, field
 from typing import Any
 
+from ._checks import whole_number
+
 __all__ = ["CountsDataset"]
 
 
@@ -34,6 +36,7 @@ class CountsDataset:
             width = len(next(iter(hist)))
             total = 0
             for bitstring, c in hist.items():
+                c = whole_number(c, f"count of {bitstring!r} in setting {label!r}")
                 if c < 0:
                     raise ValueError(f"negative count in setting {label!r}")
                 total += c
@@ -99,5 +102,9 @@ class CountsDataset:
                 )
             raw = raw[0]
         # normalise bitstrings (strip spaces used by multi-register results)
-        hist = {str(k).replace(" ", ""): int(v) for k, v in raw.items()}
+        # whole_number, not int(): int() truncates 2.7 to 2 and silently drops data
+        hist = {
+            str(k).replace(" ", ""): whole_number(v, f"Qiskit count of {k!r}")
+            for k, v in raw.items()
+        }
         return cls({setting: hist}, povm=povm, meta=meta or {})
