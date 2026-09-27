@@ -40,6 +40,19 @@ def probability_interval(
     if setting not in dataset.settings:
         raise ValueError(f"unknown setting {setting!r}")
     hist = dataset.settings[setting]
+    width = len(next(iter(hist)))
+    if (
+        not isinstance(bitstring, str)
+        or len(bitstring) != width
+        or any(ch not in "01" for ch in bitstring)
+    ):
+        # A target the register cannot be in must not be scored as "seen zero
+        # times": that returned a confident interval near 0 for a typo or for a
+        # target with the wrong qubit count.
+        raise ValueError(
+            f"target bitstring {bitstring!r} is not a {width}-qubit 0/1 string "
+            f"like the outcomes recorded in setting {setting!r}"
+        )
     n = sum(hist.values())
     k = hist.get(bitstring, 0)
     base = _METHODS[method](k, n, level)
