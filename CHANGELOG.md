@@ -7,6 +7,26 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ### Fixed
+- `chsh(inf, inf, setting_randomness_declared=True)` returned `CERTIFIED`.
+  `0 <= wins <= rounds` holds for infinity, `omega` and `S` came out `nan` (so
+  the Tsirelson guard, a `>` comparison, never fired) and the game tail was
+  `0.0`. `chsh`, `wins_from_setting_counts`, `CountsDataset`, `from_qiskit` and
+  the two interval functions now accept only finite whole numbers (Python or
+  numpy integers, or integral floats such as `80.0`) and refuse booleans,
+  fractions, `nan` and `inf`. `from_qiskit` used `int(v)`, which truncated
+  `2.7` shots to `2` without a word.
+- `Study.add("x", False)` certified. `bool` is an `int`, so a flag passed where
+  the p-value belongs (for instance `result.certified`) was read as `p = 0`,
+  certifying exactly the results that had failed. Booleans, Python or numpy, are
+  now refused as p-values.
+- `chsh(..., setting_randomness_declared="no")` certified, and so did `"False"`
+  or `1`: the affirmation was read as a truth value. `Study` read
+  `assumptions_met` the same way, so `assumptions_met="False"` counted as met.
+  Both now accept only a real boolean (Python or numpy) and raise otherwise.
+- `fidelity_to_basis_state` and `probability_interval` scored a target the
+  register cannot be in -- the wrong qubit count, or not a 0/1 string -- as
+  "measured zero times" and returned a confident interval near 0. They now
+  raise unless the target has the width and alphabet of the recorded outcomes.
 - The shipped worked example certified a claim the library exists to refuse.
   `examples/run_example.py` added `chsh(1720, 2000, ...)` to its study labelled
   `S=2.88`, above the Tsirelson bound `2*sqrt(2) = 2.8284`, so `chsh` had already
